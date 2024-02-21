@@ -1,11 +1,13 @@
 import {describe, it, expect} from 'vitest';
 import {Fraction, LOG_PRIMES, circleDistance, toMonzo} from 'xen-dev-utils';
 import {
-  KRAIG_GRADY_X,
-  KRAIG_GRADY_Y,
+  GridOptions,
+  kraigGrady9,
   modVal,
   primeRing72,
   scottDakota24,
+  shortestEdge,
+  spanGrid,
   spanLattice,
 } from '..';
 
@@ -53,7 +55,7 @@ describe('Kraig Grady lattice', () => {
       monzos.push(toMonzo(fifths.mul(7).geoMod(2)));
     }
     monzos[0].push(1);
-    const {vertices, edges} = spanLattice(monzos, KRAIG_GRADY_X, KRAIG_GRADY_Y);
+    const {vertices, edges} = spanLattice(monzos, kraigGrady9());
     expect(vertices).toEqual([
       {index: 0, x: 0, y: 0},
       {index: 1, x: 0, y: -40},
@@ -66,29 +68,26 @@ describe('Kraig Grady lattice', () => {
       {index: 8, x: 93, y: -11},
     ]);
     expect(edges).toEqual([
-      {x1: 0, y1: 0, x2: 0, y2: -40, primary: true},
-      {x1: 0, y1: 0, x2: 13, y2: -11, primary: true},
-      {x1: 0, y1: 0, x2: 40, y2: 0, primary: true},
-      {x1: 0, y1: -40, x2: 40, y2: -40, primary: true},
-      {x1: 13, y1: -11, x2: 53, y2: -11, primary: true},
-      {x1: 40, y1: 0, x2: 40, y2: -40, primary: true},
-      {x1: 40, y1: 0, x2: 53, y2: -11, primary: true},
-      {x1: 40, y1: 0, x2: 80, y2: 0, primary: true},
-      {x1: 40, y1: -40, x2: 80, y2: -40, primary: true},
-      {x1: 53, y1: -11, x2: 93, y2: -11, primary: true},
-      {x1: 80, y1: 0, x2: 80, y2: -40, primary: true},
-      {x1: 80, y1: 0, x2: 93, y2: -11, primary: true},
+      {x1: 0, y1: 0, x2: 0, y2: -40, type: 'primary'},
+      {x1: 0, y1: 0, x2: 13, y2: -11, type: 'primary'},
+      {x1: 0, y1: 0, x2: 40, y2: 0, type: 'primary'},
+      {x1: 0, y1: -40, x2: 40, y2: -40, type: 'primary'},
+      {x1: 13, y1: -11, x2: 53, y2: -11, type: 'primary'},
+      {x1: 40, y1: 0, x2: 40, y2: -40, type: 'primary'},
+      {x1: 40, y1: 0, x2: 53, y2: -11, type: 'primary'},
+      {x1: 40, y1: 0, x2: 80, y2: 0, type: 'primary'},
+      {x1: 40, y1: -40, x2: 80, y2: -40, type: 'primary'},
+      {x1: 53, y1: -11, x2: 93, y2: -11, type: 'primary'},
+      {x1: 80, y1: 0, x2: 80, y2: -40, type: 'primary'},
+      {x1: 80, y1: 0, x2: 93, y2: -11, type: 'primary'},
     ]);
   });
 
   it('connects in a straight line at max distance 2', () => {
     const monzos = [[1], [2, -1], [-3, 2]];
-    const {vertices, edges} = spanLattice(
-      monzos,
-      KRAIG_GRADY_X,
-      KRAIG_GRADY_Y,
-      2
-    );
+    const options = kraigGrady9();
+    options.maxDistance = 2;
+    const {vertices, edges} = spanLattice(monzos, options);
     expect(vertices).toEqual([
       {index: 0, x: 0, y: 0},
       {index: 1, x: -40, y: 0},
@@ -96,9 +95,9 @@ describe('Kraig Grady lattice', () => {
       {index: undefined, x: 40, y: 0},
     ]);
     expect(edges).toEqual([
-      {x1: 0, y1: 0, x2: -40, y2: 0, primary: true},
-      {x1: 0, y1: 0, x2: 40, y2: 0, primary: false},
-      {x1: 80, y1: 0, x2: 40, y2: 0, primary: false},
+      {x1: 0, y1: 0, x2: -40, y2: 0, type: 'primary'},
+      {x1: 0, y1: 0, x2: 40, y2: 0, type: 'auxiliary'},
+      {x1: 80, y1: 0, x2: 40, y2: 0, type: 'auxiliary'},
     ]);
   });
 });
@@ -114,12 +113,9 @@ describe("Scott Dakota's PR24 lattice", () => {
       [0, 1, 1],
       [0, 2, 1],
     ];
-    const {horizontalCoordinates, verticalCoordinates} = scottDakota24();
-    const {vertices, edges} = spanLattice(
-      monzos,
-      horizontalCoordinates,
-      verticalCoordinates
-    );
+    const options = scottDakota24();
+    options.edgeMonzos = [[0, -2, -1]];
+    const {vertices, edges} = spanLattice(monzos, options);
     expect(vertices).toEqual([
       {index: 0, x: 0, y: 0},
       {index: 1, x: 31, y: 9},
@@ -130,14 +126,15 @@ describe("Scott Dakota's PR24 lattice", () => {
       {index: 6, x: 88, y: 4},
     ]);
     expect(edges).toEqual([
-      {x1: 0, y1: 0, x2: 31, y2: 9, primary: true},
-      {x1: 0, y1: 0, x2: 26, y2: -14, primary: true},
-      {x1: 31, y1: 9, x2: 62, y2: 18, primary: true},
-      {x1: 31, y1: 9, x2: 57, y2: -5, primary: true},
-      {x1: 62, y1: 18, x2: 93, y2: 27, primary: true},
-      {x1: 62, y1: 18, x2: 88, y2: 4, primary: true},
-      {x1: 26, y1: -14, x2: 57, y2: -5, primary: true},
-      {x1: 57, y1: -5, x2: 88, y2: 4, primary: true},
+      {x1: 0, y1: 0, x2: 31, y2: 9, type: 'primary'},
+      {x1: 0, y1: 0, x2: 26, y2: -14, type: 'primary'},
+      {x1: 31, y1: 9, x2: 62, y2: 18, type: 'primary'},
+      {x1: 31, y1: 9, x2: 57, y2: -5, type: 'primary'},
+      {x1: 62, y1: 18, x2: 93, y2: 27, type: 'primary'},
+      {x1: 62, y1: 18, x2: 88, y2: 4, type: 'primary'},
+      {x1: 26, y1: -14, x2: 57, y2: -5, type: 'primary'},
+      {x1: 57, y1: -5, x2: 88, y2: 4, type: 'primary'},
+      {x1: 0, y1: 0, x2: 88, y2: 4, type: 'custom'},
     ]);
   });
 });
@@ -154,7 +151,8 @@ describe('Prime ring 72 coordinates', () => {
   });
 
   it('connects a combination product set at max distance = 2', () => {
-    const {horizontalCoordinates, verticalCoordinates} = primeRing72();
+    const options = primeRing72();
+    options.maxDistance = 2;
     const monzos = [
       [-1, -1, 0, 1],
       [-2, 0, 1],
@@ -163,12 +161,7 @@ describe('Prime ring 72 coordinates', () => {
       [-2, 0, 0, 1],
       [1],
     ];
-    const {vertices, edges} = spanLattice(
-      monzos,
-      horizontalCoordinates,
-      verticalCoordinates,
-      2
-    );
+    const {vertices, edges} = spanLattice(monzos, options);
     expect(vertices).toEqual([
       {index: 0, x: -45, y: 16},
       {index: 1, x: 53, y: -33},
@@ -180,18 +173,99 @@ describe('Prime ring 72 coordinates', () => {
       {index: undefined, x: 77, y: 1},
     ]);
     expect(edges).toEqual([
-      {x1: -45, y1: 16, x2: 8, y2: -17, primary: true},
-      {x1: -45, y1: 16, x2: 24, y2: 34, primary: true},
-      {x1: -45, y1: 16, x2: -69, y2: -18, primary: false},
-      {x1: 53, y1: -33, x2: -16, y2: -51, primary: true},
-      {x1: 53, y1: -33, x2: 0, y2: 0, primary: true},
-      {x1: 53, y1: -33, x2: 77, y2: 1, primary: false},
-      {x1: 8, y1: -17, x2: -16, y2: -51, primary: true},
-      {x1: 8, y1: -17, x2: 77, y2: 1, primary: false},
-      {x1: -16, y1: -51, x2: -69, y2: -18, primary: false},
-      {x1: 24, y1: 34, x2: 0, y2: 0, primary: true},
-      {x1: 24, y1: 34, x2: 77, y2: 1, primary: false},
-      {x1: 0, y1: 0, x2: -69, y2: -18, primary: false},
+      {x1: -45, y1: 16, x2: 8, y2: -17, type: 'primary'},
+      {x1: -45, y1: 16, x2: 24, y2: 34, type: 'primary'},
+      {x1: -45, y1: 16, x2: -69, y2: -18, type: 'auxiliary'},
+      {x1: 53, y1: -33, x2: -16, y2: -51, type: 'primary'},
+      {x1: 53, y1: -33, x2: 0, y2: 0, type: 'primary'},
+      {x1: 53, y1: -33, x2: 77, y2: 1, type: 'auxiliary'},
+      {x1: 8, y1: -17, x2: -16, y2: -51, type: 'primary'},
+      {x1: 8, y1: -17, x2: 77, y2: 1, type: 'auxiliary'},
+      {x1: -16, y1: -51, x2: -69, y2: -18, type: 'auxiliary'},
+      {x1: 24, y1: 34, x2: 0, y2: 0, type: 'primary'},
+      {x1: 24, y1: 34, x2: 77, y2: 1, type: 'auxiliary'},
+      {x1: 0, y1: 0, x2: -69, y2: -18, type: 'auxiliary'},
     ]);
+  });
+});
+
+describe('Grid spanner', () => {
+  it('spans pentatonic major in 12TET', () => {
+    const steps = [0, 2, 4, 7, 9];
+    const {vertices, edges} = spanGrid(steps, {
+      modulus: 12,
+      delta1: 7,
+      delta1X: 1,
+      delta1Y: 0,
+      delta2: 4,
+      delta2X: 0,
+      delta2Y: -1,
+      minX: -2,
+      maxX: 2,
+      minY: -2,
+      maxY: 2,
+      edgeVectors: [
+        [1, 0],
+        [0, -1],
+      ],
+    });
+    expect(vertices).toEqual([
+      {x: -2, y: 2, index: 1}, // [x]
+      {x: -2, y: -1, index: 1}, // [x]
+      {x: -1, y: 2, index: 4}, // [x]
+      {x: -1, y: -1, index: 4}, // Sixth
+      {x: 0, y: 2, index: 2}, // [x]
+      {x: 0, y: 0, index: 0}, // Origin
+      {x: 0, y: -1, index: 2}, // Third
+      {x: 1, y: 0, index: 3}, // Fifth
+      {x: 2, y: 0, index: 1}, // Second
+    ]);
+    expect(edges).toEqual([
+      {x1: -2, y1: 2, x2: -1, y2: 2, type: 'custom'},
+      {x1: -2, y1: -1, x2: -1, y2: -1, type: 'custom'},
+      {x1: -1, y1: 2, x2: 0, y2: 2, type: 'custom'},
+      {x1: -1, y1: -1, x2: 0, y2: -1, type: 'custom'},
+      {x1: 0, y1: 0, x2: 0, y2: -1, type: 'custom'},
+      {x1: 0, y1: 0, x2: 1, y2: 0, type: 'custom'},
+      {x1: 1, y1: 0, x2: 2, y2: 0, type: 'custom'},
+    ]);
+  });
+
+  it('spans some primes in 311TET', () => {
+    const p311 = LOG_PRIMES.slice(1, 6).map(l =>
+      Math.round((311 * l) / LOG_PRIMES[0])
+    );
+    const options: GridOptions = {
+      modulus: 311,
+      delta1: 296,
+      delta1X: 14,
+      delta1Y: 2,
+      delta2: 242,
+      delta2X: 7,
+      delta2Y: -8,
+      minX: -400,
+      maxX: 400,
+      minY: -250,
+      maxY: 250,
+      edgeVectors: [],
+    };
+    for (const step of p311) {
+      options.edgeVectors!.push(shortestEdge(step, options));
+    }
+    expect(options.edgeVectors).toEqual([
+      [63, 0],
+      [28, -68],
+      [56, 8],
+      [42, -12],
+      [-28, -22],
+    ]);
+    const steps = [0, ...p311];
+    steps.push(p311[0] + p311[1]);
+    steps.push(2 * p311[0] + p311[1]);
+    steps.push(2 * p311[0] + 2 * p311[1]);
+    steps.push(3 * p311[0] + 2 * p311[1]);
+    const {vertices, edges} = spanGrid(steps, options);
+    expect(vertices).toHaveLength(101);
+    expect(edges).toHaveLength(93);
   });
 });
