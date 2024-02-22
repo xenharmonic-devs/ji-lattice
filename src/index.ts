@@ -115,7 +115,7 @@ function connect(monzos: number[][], maxDistance: number) {
         const distance = taxicabDistance(monzos[i], monzos[j]);
         if (distance > 1 && distance <= maxDistance) {
           const len = Math.max(monzos[i].length, monzos[j].length);
-          for (let k = 0; k < len; ++k) {
+          gapSearch: for (let k = 0; k < len; ++k) {
             const gap = (monzos[i][k] ?? 0) - (monzos[j][k] ?? 0);
             if (Math.abs(gap) === 2) {
               const monzo = [...monzos[j]];
@@ -125,7 +125,7 @@ function connect(monzos: number[][], maxDistance: number) {
               monzo[k] += gap / 2;
               for (const existing of monzos.concat(connectingMonzos)) {
                 if (monzosEqual(monzo, existing)) {
-                  break;
+                  break gapSearch;
                 }
               }
               connectingMonzos.push(monzo);
@@ -156,8 +156,8 @@ function connect(monzos: number[][], maxDistance: number) {
                 if (otherUnique) {
                   connectingMonzos.push(otherWay);
                 }
+                break gapSearch;
               }
-              break;
             }
           }
         }

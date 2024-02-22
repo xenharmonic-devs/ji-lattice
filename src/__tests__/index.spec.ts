@@ -100,6 +100,30 @@ describe('Kraig Grady lattice', () => {
       {x1: 80, y1: 0, x2: 40, y2: 0, type: 'auxiliary'},
     ]);
   });
+
+  it("doesn't over-connect at max distance 2", () => {
+    const monzos = [[1], [0, -1], [0, 1], [0, 0, 1]];
+    const options = kraigGrady9();
+    options.maxDistance = 2;
+    const {vertices, edges} = spanLattice(monzos, options);
+    expect(vertices).toEqual([
+      {index: 0, x: 0, y: 0},
+      {index: 1, x: -40, y: 0},
+      {index: 2, x: 40, y: 0},
+      {index: 3, x: 0, y: -40},
+      {index: undefined, x: -40, y: -40},
+      {index: undefined, x: 40, y: -40},
+    ]);
+    expect(edges).toEqual([
+      {x1: 0, y1: 0, x2: -40, y2: 0, type: 'primary'},
+      {x1: 0, y1: 0, x2: 40, y2: 0, type: 'primary'},
+      {x1: 0, y1: 0, x2: 0, y2: -40, type: 'primary'},
+      {x1: -40, y1: 0, x2: -40, y2: -40, type: 'auxiliary'},
+      {x1: 40, y1: 0, x2: 40, y2: -40, type: 'auxiliary'},
+      {x1: 0, y1: -40, x2: -40, y2: -40, type: 'auxiliary'},
+      {x1: 0, y1: -40, x2: 40, y2: -40, type: 'auxiliary'},
+    ]);
+  });
 });
 
 describe("Scott Dakota's PR24 lattice", () => {
