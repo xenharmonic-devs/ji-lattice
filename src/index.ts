@@ -1,4 +1,6 @@
-import {LOG_PRIMES, dot, mmod, monzosEqual} from 'xen-dev-utils';
+import {LOG_PRIMES, dot, mmod, monzosEqual, sub} from 'xen-dev-utils';
+
+export type EdgeType = 'primary' | 'custom' | 'auxiliary';
 
 export type Vertex = {
   x: number;
@@ -11,22 +13,51 @@ export type Edge = {
   y1: number;
   x2: number;
   y2: number;
-  primary: boolean;
+  type: EdgeType;
 };
 
 export type Connection = {
   index1: number;
   index2: number;
-  primary: boolean;
+  type: EdgeType;
+};
+
+export type LatticeOptions = {
+  horizontalCoordinates: number[];
+  verticalCoordinates: number[];
+  maxDistance?: number;
+  equaveIndex?: number;
+  edgeMonzos?: number[][];
+};
+
+export type GridOptions = {
+  modulus: number;
+
+  delta1: number;
+  delta1X: number;
+  delta1Y: number;
+
+  delta2: number;
+  delta2X: number;
+  delta2Y: number;
+
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+
+  edgeVectors?: number[][];
+
+  range?: number;
 };
 
 // Coordinates are for SVG so positive y-direction points down.
 // Based on Kraig Grady's coordinate system https://anaphoria.com/wilsontreasure.html
 // Coordinates for prime 2 by Lumi Pakkanen.
 // X-coordinates for every prime up to 23.
-export const KRAIG_GRADY_X = [-23, 40, 0, 13, -14, -8, -5, 7, 20];
+const KRAIG_GRADY_X = [-23, 40, 0, 13, -14, -8, -5, 7, 20];
 // Y-coordinates for every prime up to 23.
-export const KRAIG_GRADY_Y = [-45, 0, -40, -11, -18, -4, -32, -25, -6];
+const KRAIG_GRADY_Y = [-45, 0, -40, -11, -18, -4, -32, -25, -6];
 
 // Sine quantized to integers according to Scott Dakota.
 const SCOTT_DAKOTA_SINE = [
@@ -134,7 +165,8 @@ function connect(monzos: number[][], maxDistance: number) {
         connections.push({
           index1: i,
           index2: j,
-          primary: i < primaryLength && j < primaryLength,
+          type:
+            i < primaryLength && j < primaryLength ? 'primary' : 'auxiliary',
         });
       }
     }
@@ -160,16 +192,15 @@ function prepare(monzo: number[], equaveIndex: number) {
  * @param equaveIndex Index of the prime of equivalence to ignore during distance calculation.
  * @returns Vertices and edges of the graph.
  */
-export function spanLattice(
-  monzos: number[][],
-  horizontalCoordinates: number[],
-  verticalCoordinates: number[],
-  maxDistance = 1,
-  equaveIndex = 0
-) {
+export function spanLattice(monzos: number[][], options: LatticeOptions) {
+  const equaveIndex = options.equaveIndex ?? 0;
+  const maxDistance = options.maxDistance ?? 1;
   monzos = monzos.map(m => prepare(m, equaveIndex));
-  horizontalCoordinates = prepare(horizontalCoordinates, equaveIndex);
-  verticalCoordinates = prepare(verticalCoordinates, equaveIndex);
+  const horizontalCoordinates = prepare(
+    options.horizontalCoordinates,
+    equaveIndex
+  );
+  const verticalCoordinates = prepare(options.verticalCoordinates, equaveIndex);
 
   const {connections, connectingMonzos} = connect(monzos, maxDistance);
 
@@ -193,15 +224,40 @@ export function spanLattice(
   }
 
   for (const connection of connections) {
-    const {index1, index2, primary} = connection;
+    const {index1, index2, type} = connection;
     edges.push({
       x1: vertices[index1].x,
       y1: vertices[index1].y,
       x2: vertices[index2].x,
       y2: vertices[index2].y,
-      primary,
+      type,
     });
   }
+
+  if (options.edgeMonzos) {
+    let ems = [...options.edgeMonzos];
+    for (const em of ems) {
+      em.splice(equaveIndex, 1);
+    }
+    ems = ems.concat(ems.map(em => em.map(e => -e)));
+    for (let i = 0; i < monzos.length; ++i) {
+      for (let j = i + 1; j < monzos.length; ++j) {
+        const diff = sub(monzos[i], monzos[j]);
+        for (const em of ems) {
+          if (monzosEqual(diff, em)) {
+            edges.push({
+              x1: vertices[i].x,
+              y1: vertices[i].y,
+              x2: vertices[j].x,
+              y2: vertices[j].y,
+              type: 'custom',
+            });
+          }
+        }
+      }
+    }
+  }
+
   return {
     vertices,
     edges,
@@ -277,11 +333,25 @@ export function modVal(
 }
 
 /**
- * Compute prime ring 24 coordinates based on Scott Dakota's conventions.
+ * Get Kraig Grady's coordinates for the first 9 primes.
+ * @param equaveIndex Index of the prime to use as the interval of equivalence.
  * @returns An array of horizontal coordinates for each prime and the same for vertical coordinates.
  */
-export function scottDakota24() {
-  const logs = LOG_PRIMES.slice(0, 24);
+export function kraigGrady9(equaveIndex = 0): LatticeOptions {
+  return {
+    horizontalCoordinates: [...KRAIG_GRADY_X],
+    verticalCoordinates: [...KRAIG_GRADY_Y],
+    equaveIndex,
+  };
+}
+
+/**
+ * Compute prime ring 24 coordinates based on Scott Dakota's conventions.
+ * @param logs Logarithms of (formal) primes with the prime of equivalence first. Defaults to the actual primes.
+ * @returns An array of horizontal coordinates for each prime and the same for vertical coordinates.
+ */
+export function scottDakota24(logs?: number[]): LatticeOptions {
+  logs ??= LOG_PRIMES.slice(0, 24);
   const mv = modVal(logs, 24);
   const horizontalCoordinates: number[] = [];
   const verticalCoordinates: number[] = [];
@@ -292,15 +362,17 @@ export function scottDakota24() {
   return {
     horizontalCoordinates,
     verticalCoordinates,
+    equaveIndex: 0,
   };
 }
 
 /**
  * Compute prime ring 72 coordinates.
+ * @param logs Logarithms of (formal) primes with the prime of equivalence first. Defaults to the actual primes.
  * @returns An array of horizontal coordinates for each prime and the same for vertical coordinates.
  */
-export function primeRing72() {
-  const logs = LOG_PRIMES.slice(0, 72);
+export function primeRing72(logs?: number[]): LatticeOptions {
+  logs ??= LOG_PRIMES.slice(0, 72);
   const mv = modVal(logs, 72);
   const horizontalCoordinates: number[] = [];
   const verticalCoordinates: number[] = [];
@@ -312,5 +384,123 @@ export function primeRing72() {
   return {
     horizontalCoordinates,
     verticalCoordinates,
+    equaveIndex: 0,
   };
+}
+
+export function spanGrid(steps: number[], options: GridOptions) {
+  const {
+    modulus,
+    delta1,
+    delta1X,
+    delta1Y,
+    delta2,
+    delta2X,
+    delta2Y,
+    minX,
+    maxX,
+    minY,
+    maxY,
+    edgeVectors,
+  } = options;
+  const range = options.range ?? 100;
+
+  steps = steps.map(s => mmod(s, modulus));
+
+  const vertices: Vertex[] = [];
+  for (let i = -range; i <= range; ++i) {
+    for (let j = -range; j <= range; ++j) {
+      const x = delta1X * i + delta2X * j;
+      const y = delta1Y * i + delta2Y * j;
+      if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
+        const step = mmod(delta1 * i + delta2 * j, modulus);
+        const index = steps.indexOf(step);
+        if (index >= 0) {
+          vertices.push({x, y, index});
+        }
+      }
+    }
+  }
+
+  const edges: Edge[] = [];
+
+  if (edgeVectors) {
+    let evs = [...edgeVectors];
+    evs = evs.concat(evs.map(ev => ev.map(e => -e)));
+    for (let i = 0; i < vertices.length; ++i) {
+      for (let j = i + 1; j < vertices.length; ++j) {
+        const dx = vertices[i].x - vertices[j].x;
+        const dy = vertices[i].y - vertices[j].y;
+        for (const [vx, vy] of evs) {
+          if (dx === vx && dy === vy) {
+            edges.push({
+              x1: vertices[i].x,
+              y1: vertices[i].y,
+              x2: vertices[j].x,
+              y2: vertices[j].y,
+              type: 'custom',
+            });
+          }
+        }
+      }
+    }
+  }
+
+  return {vertices, edges};
+}
+
+export function shortestEdge(step: number, options: GridOptions) {
+  const {
+    modulus,
+    delta1,
+    delta1X,
+    delta1Y,
+    delta2,
+    delta2X,
+    delta2Y,
+    minX,
+    maxX,
+    minY,
+    maxY,
+  } = options;
+  const range = options.range ?? 100;
+
+  step = mmod(step, modulus);
+
+  const vertices: Vertex[] = [];
+  for (let i = -range; i <= range; ++i) {
+    for (let j = -range; j <= range; ++j) {
+      const x = delta1X * i + delta2X * j;
+      const y = delta1Y * i + delta2Y * j;
+      // Grow search area to go from corner to corner.
+      if (x >= 2 * minX && x <= 2 * maxX && y >= 2 * minY && y <= 2 * maxY) {
+        const s = mmod(delta1 * i + delta2 * j, modulus);
+        if (s === step) {
+          vertices.push({x, y});
+        }
+      }
+    }
+  }
+
+  if (!vertices.length) {
+    throw new Error('Step not found on grid.');
+  }
+
+  let shortestX = NaN;
+  let shortestY = NaN;
+  let norm = Infinity;
+
+  // Only compare against the origin
+  for (let i = 0; i < vertices.length; ++i) {
+    const dx = vertices[i].x;
+    const dy = vertices[i].y;
+    const l2 = dx * dx + dy * dy;
+    if (l2 < norm) {
+      norm = l2;
+      shortestX = dx;
+      shortestY = dy;
+    }
+  }
+
+  return [shortestX, shortestY];
 }
