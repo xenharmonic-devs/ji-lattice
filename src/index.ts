@@ -1,6 +1,6 @@
 import {LOG_PRIMES, dot, mmod, monzosEqual, sub} from 'xen-dev-utils';
 
-export type EdgeType = 'primary' | 'custom' | 'auxiliary';
+export type EdgeType = 'primary' | 'custom' | 'auxiliary' | 'gridline';
 
 export type Vertex = {
   x: number;
@@ -30,6 +30,13 @@ export type LatticeOptions = {
   edgeMonzos?: number[][];
 };
 
+export type GridLineOptions = {
+  delta1?: boolean;
+  delta2?: boolean;
+  diagonal1?: boolean;
+  diagonal2?: boolean;
+};
+
 export type GridOptions = {
   modulus: number;
 
@@ -47,6 +54,7 @@ export type GridOptions = {
   maxY: number;
 
   edgeVectors?: number[][];
+  gridLines?: GridLineOptions;
 
   range?: number;
 };
@@ -235,10 +243,7 @@ export function spanLattice(monzos: number[][], options: LatticeOptions) {
   }
 
   if (options.edgeMonzos) {
-    let ems = [...options.edgeMonzos];
-    for (const em of ems) {
-      em.splice(equaveIndex, 1);
-    }
+    let ems = options.edgeMonzos.map(em => prepare(em, equaveIndex));
     ems = ems.concat(ems.map(em => em.map(e => -e)));
     for (let i = 0; i < monzos.length; ++i) {
       for (let j = i + 1; j < monzos.length; ++j) {
@@ -388,6 +393,39 @@ export function primeRing72(logs?: number[]): LatticeOptions {
   };
 }
 
+function gridline(
+  uX: number,
+  uY: number,
+  vX: number,
+  vY: number,
+  options: GridOptions
+): Edge | undefined {
+  const {minX, maxX, minY, maxY} = options;
+  const range = options.range ?? 100;
+  let j, x, y;
+
+  j = -range - 1;
+  do {
+    j++;
+    x = uX + vX * j;
+    y = uY + vY * j;
+  } while (j <= range && (x < minX || x > maxX || y < minY || y > maxY));
+  if (j > range) {
+    return undefined;
+  }
+  j--;
+  const x1 = uX + vX * j;
+  const y1 = uY + vY * j;
+  while (x >= minX && x <= maxX && y >= minY && y <= maxY) {
+    j++;
+    x = uX + vX * j;
+    y = uY + vY * j;
+  }
+  const x2 = x;
+  const y2 = y;
+  return {x1, y1, x2, y2, type: 'gridline'};
+}
+
 export function spanGrid(steps: number[], options: GridOptions) {
   const {
     modulus,
@@ -402,6 +440,7 @@ export function spanGrid(steps: number[], options: GridOptions) {
     minY,
     maxY,
     edgeVectors,
+    gridLines,
   } = options;
   const range = options.range ?? 100;
 
@@ -441,6 +480,38 @@ export function spanGrid(steps: number[], options: GridOptions) {
               type: 'custom',
             });
           }
+        }
+      }
+    }
+  }
+
+  if (gridLines) {
+    for (let i = -range; i <= range; ++i) {
+      const uX = delta1X * i;
+      const uY = delta1Y * i;
+      let edge;
+      if (gridLines.delta1) {
+        edge = gridline(delta2X * i, delta2Y * i, delta1X, delta1Y, options);
+        if (edge) {
+          edges.push(edge);
+        }
+      }
+      if (gridLines.delta2) {
+        edge = gridline(uX, uY, delta2X, delta2Y, options);
+        if (edge) {
+          edges.push(edge);
+        }
+      }
+      if (gridLines.diagonal1) {
+        edge = gridline(uX, uY, delta1X - delta2X, delta1Y - delta2Y, options);
+        if (edge) {
+          edges.push(edge);
+        }
+      }
+      if (gridLines.diagonal2) {
+        edge = gridline(uX, uY, delta1X + delta2X, delta1Y + delta2Y, options);
+        if (edge) {
+          edges.push(edge);
         }
       }
     }

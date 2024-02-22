@@ -190,7 +190,7 @@ describe('Prime ring 72 coordinates', () => {
 });
 
 describe('Grid spanner', () => {
-  it('spans pentatonic major in 12TET', () => {
+  it('spans pentatonic major in 12-TET', () => {
     const steps = [0, 2, 4, 7, 9];
     const {vertices, edges} = spanGrid(steps, {
       modulus: 12,
@@ -208,6 +208,7 @@ describe('Grid spanner', () => {
         [1, 0],
         [0, -1],
       ],
+      gridLines: {delta1: true, delta2: true},
     });
     expect(vertices).toEqual([
       {x: -2, y: 2, index: 1}, // [x]
@@ -228,10 +229,20 @@ describe('Grid spanner', () => {
       {x1: 0, y1: 0, x2: 0, y2: -1, type: 'custom'},
       {x1: 0, y1: 0, x2: 1, y2: 0, type: 'custom'},
       {x1: 1, y1: 0, x2: 2, y2: 0, type: 'custom'},
+      {x1: -3, y1: 2, x2: 3, y2: 2, type: 'gridline'},
+      {x1: -2, y1: 3, x2: -2, y2: -3, type: 'gridline'},
+      {x1: -3, y1: 1, x2: 3, y2: 1, type: 'gridline'},
+      {x1: -1, y1: 3, x2: -1, y2: -3, type: 'gridline'},
+      {x1: -3, y1: -0, x2: 3, y2: 0, type: 'gridline'},
+      {x1: 0, y1: 3, x2: 0, y2: -3, type: 'gridline'},
+      {x1: -3, y1: -1, x2: 3, y2: -1, type: 'gridline'},
+      {x1: 1, y1: 3, x2: 1, y2: -3, type: 'gridline'},
+      {x1: -3, y1: -2, x2: 3, y2: -2, type: 'gridline'},
+      {x1: 2, y1: 3, x2: 2, y2: -3, type: 'gridline'},
     ]);
   });
 
-  it('spans some primes in 311TET', () => {
+  it('spans some primes in 311-TET', () => {
     const p311 = LOG_PRIMES.slice(1, 6).map(l =>
       Math.round((311 * l) / LOG_PRIMES[0])
     );
@@ -267,5 +278,34 @@ describe('Grid spanner', () => {
     const {vertices, edges} = spanGrid(steps, options);
     expect(vertices).toHaveLength(101);
     expect(edges).toHaveLength(93);
+  });
+
+  it('generates a triangular grid for 53-TET', () => {
+    const options: GridOptions = {
+      modulus: 53,
+      delta1: 84,
+      delta1X: 6,
+      delta1Y: 0,
+      delta2: 123,
+      delta2X: 3,
+      delta2Y: -5,
+      minX: -41.1,
+      maxX: 41.1,
+      minY: -21.1,
+      maxY: 21.1,
+      gridLines: {
+        delta1: true,
+        delta2: true,
+        diagonal1: true,
+      },
+    };
+    const {edges} = spanGrid([], options);
+    const slopes = new Set<number>();
+    for (const edge of edges) {
+      const slope = (3 * (edge.y2 - edge.y1)) / (edge.x2 - edge.x1);
+      expect([0, 5, -5]).toContain(slope);
+      slopes.add(slope);
+    }
+    expect(slopes).toHaveLength(3);
   });
 });
