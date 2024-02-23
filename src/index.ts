@@ -62,6 +62,8 @@ export type GridOptions = {
   gridLines?: GridLineOptions;
 
   range?: number;
+  maxVertices?: number;
+  maxEdges?: number;
 };
 
 // Coordinates are for SVG so positive y-direction points down.
@@ -483,6 +485,8 @@ export function spanGrid(steps: number[], options: GridOptions) {
     gridLines,
   } = options;
   const range = options.range ?? 100;
+  const maxVertices = options.maxVertices ?? 1000;
+  const maxEdges = options.maxEdges ?? 1000;
 
   steps = steps.map(s => mmod(s, modulus));
 
@@ -498,7 +502,7 @@ export function spanGrid(steps: number[], options: GridOptions) {
   }
 
   const vertices: MultiVertex[] = [];
-  for (let i = -range; i <= range; ++i) {
+  search: for (let i = -range; i <= range; ++i) {
     for (let j = -range; j <= range; ++j) {
       const x = delta1X * i + delta2X * j;
       const y = delta1Y * i + delta2Y * j;
@@ -506,6 +510,9 @@ export function spanGrid(steps: number[], options: GridOptions) {
         const step = mmod(delta1 * i + delta2 * j, modulus);
         if (indices.has(step)) {
           vertices.push({x, y, indices: indices.get(step)!});
+          if (vertices.length >= maxVertices) {
+            break search;
+          }
         }
       }
     }
@@ -516,7 +523,7 @@ export function spanGrid(steps: number[], options: GridOptions) {
   if (edgeVectors) {
     let evs = [...edgeVectors];
     evs = evs.concat(evs.map(ev => ev.map(e => -e)));
-    for (let i = 0; i < vertices.length; ++i) {
+    search: for (let i = 0; i < vertices.length; ++i) {
       for (let j = i + 1; j < vertices.length; ++j) {
         const dx = vertices[i].x - vertices[j].x;
         const dy = vertices[i].y - vertices[j].y;
@@ -529,6 +536,9 @@ export function spanGrid(steps: number[], options: GridOptions) {
               y2: vertices[j].y,
               type: 'custom',
             });
+            if (edges.length >= maxEdges) {
+              break search;
+            }
           }
         }
       }
@@ -537,6 +547,9 @@ export function spanGrid(steps: number[], options: GridOptions) {
 
   if (gridLines) {
     for (let i = -range; i <= range; ++i) {
+      if (edges.length >= maxEdges) {
+        break;
+      }
       const uX = delta1X * i;
       const uY = delta1Y * i;
       let edge;
@@ -585,11 +598,12 @@ export function shortestEdge(step: number, options: GridOptions) {
     maxY,
   } = options;
   const range = options.range ?? 100;
+  const maxVertices = options.maxVertices ?? 1000;
 
   step = mmod(step, modulus);
 
   const vertices: Vertex[] = [];
-  for (let i = -range; i <= range; ++i) {
+  search: for (let i = -range; i <= range; ++i) {
     for (let j = -range; j <= range; ++j) {
       const x = delta1X * i + delta2X * j;
       const y = delta1Y * i + delta2Y * j;
@@ -598,6 +612,9 @@ export function shortestEdge(step: number, options: GridOptions) {
         const s = mmod(delta1 * i + delta2 * j, modulus);
         if (s === step) {
           vertices.push({x, y});
+          if (vertices.length >= maxVertices) {
+            break search;
+          }
         }
       }
     }

@@ -382,4 +382,36 @@ describe('Grid spanner', () => {
     }
     expect(slopes).toHaveLength(3);
   });
+
+  it('has sanity limits on the number of elements', () => {
+    const steps = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+    const options: GridOptions = {
+      modulus: 12,
+      delta1: 19,
+      delta1X: 1,
+      delta1Y: 0,
+      delta2: 28,
+      delta2X: 0,
+      delta2Y: -1,
+      minX: -120.60687285223368,
+      maxX: 120.60687285223368,
+      minY: -60.2,
+      maxY: 60.2,
+      edgeVectors: [
+        [1, 0],
+        [0, -1],
+      ],
+      gridLines: {
+        delta1: true,
+        delta2: true,
+        diagonal1: false,
+        diagonal2: false,
+      },
+    };
+
+    const {vertices, edges} = spanGrid(steps, options);
+    expect(vertices.length).toBeLessThanOrEqual(1000);
+    expect(edges.length).toBeLessThanOrEqual(1000);
+  });
 });
