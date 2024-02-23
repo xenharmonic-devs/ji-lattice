@@ -8,6 +8,12 @@ export type Vertex = {
   index?: number;
 };
 
+export type MultiVertex = {
+  x: number;
+  y: number;
+  indices: number[];
+};
+
 export type Edge = {
   x1: number;
   y1: number;
@@ -480,16 +486,26 @@ export function spanGrid(steps: number[], options: GridOptions) {
 
   steps = steps.map(s => mmod(s, modulus));
 
-  const vertices: Vertex[] = [];
+  const indices = new Map<number, number[]>();
+
+  for (let i = 0; i < steps.length; ++i) {
+    const idxs = indices.get(steps[i]) ?? [];
+    idxs.push(i);
+    indices.set(steps[i], idxs);
+  }
+  for (const idxs of indices.values()) {
+    idxs.sort();
+  }
+
+  const vertices: MultiVertex[] = [];
   for (let i = -range; i <= range; ++i) {
     for (let j = -range; j <= range; ++j) {
       const x = delta1X * i + delta2X * j;
       const y = delta1Y * i + delta2Y * j;
       if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
         const step = mmod(delta1 * i + delta2 * j, modulus);
-        const index = steps.indexOf(step);
-        if (index >= 0) {
-          vertices.push({x, y, index});
+        if (indices.has(step)) {
+          vertices.push({x, y, indices: indices.get(step)!});
         }
       }
     }

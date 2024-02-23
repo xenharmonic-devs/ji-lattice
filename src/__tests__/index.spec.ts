@@ -263,15 +263,15 @@ describe('Grid spanner', () => {
       gridLines: {delta1: true, delta2: true},
     });
     expect(vertices).toEqual([
-      {x: -2, y: 2, index: 1}, // [x]
-      {x: -2, y: -1, index: 1}, // [x]
-      {x: -1, y: 2, index: 4}, // [x]
-      {x: -1, y: -1, index: 4}, // Sixth
-      {x: 0, y: 2, index: 2}, // [x]
-      {x: 0, y: 0, index: 0}, // Origin
-      {x: 0, y: -1, index: 2}, // Third
-      {x: 1, y: 0, index: 3}, // Fifth
-      {x: 2, y: 0, index: 1}, // Second
+      {x: -2, y: 2, indices: [1]}, // [x]
+      {x: -2, y: -1, indices: [1]}, // [x]
+      {x: -1, y: 2, indices: [4]}, // [x]
+      {x: -1, y: -1, indices: [4]}, // Sixth
+      {x: 0, y: 2, indices: [2]}, // [x]
+      {x: 0, y: 0, indices: [0]}, // Origin
+      {x: 0, y: -1, indices: [2]}, // Third
+      {x: 1, y: 0, indices: [3]}, // Fifth
+      {x: 2, y: 0, indices: [1]}, // Second
     ]);
     expect(edges).toEqual([
       {x1: -2, y1: 2, x2: -1, y2: 2, type: 'custom'},
@@ -292,6 +292,28 @@ describe('Grid spanner', () => {
       {x1: -3, y1: -2, x2: 3, y2: -2, type: 'gridline'},
       {x1: 2, y1: 3, x2: 2, y2: -3, type: 'gridline'},
     ]);
+  });
+
+  it('tempers the tones to "mean-tone" in 19-TET', () => {
+    const steps = [-3 * 19 + 2 * 30, 19 + 44 - 2 * 30];
+    const {vertices, edges} = spanGrid(steps, {
+      modulus: 19,
+      delta1: 30,
+      delta1X: 1,
+      delta1Y: 0,
+      delta2: 44,
+      delta2X: 0,
+      delta2Y: -1,
+      minX: -2,
+      maxX: 2,
+      minY: -2,
+      maxY: 2,
+    });
+    expect(vertices).toEqual([
+      {x: -2, y: -1, indices: [0, 1]},
+      {x: 2, y: 0, indices: [0, 1]},
+    ]);
+    expect(edges).toHaveLength(0);
   });
 
   it('spans some primes in 311-TET', () => {
