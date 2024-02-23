@@ -215,10 +215,11 @@ function project(monzos: number[][], options: LatticeOptions) {
   return projected;
 }
 
-function unprojectInPlace(monzos: number[][], options: LatticeOptions) {
+function unproject(monzos: number[][], options: LatticeOptions) {
   if (!monzos.length) {
-    return;
+    return [];
   }
+  const unprojected = monzos.map(m => [...m]);
   const {horizontalCoordinates, verticalCoordinates} = options;
   const limit = Math.max(
     horizontalCoordinates.length,
@@ -228,10 +229,11 @@ function unprojectInPlace(monzos: number[][], options: LatticeOptions) {
     if (horizontalCoordinates[i] || verticalCoordinates[i]) {
       continue;
     }
-    for (const m of monzos) {
-      m.splice(i, 0, 0);
+    for (const u of unprojected) {
+      u.splice(i, 0, 0);
     }
   }
+  return unprojected;
 }
 
 /**
@@ -247,11 +249,11 @@ export function spanLattice(monzos: number[][], options: LatticeOptions) {
   const {horizontalCoordinates, verticalCoordinates} = options;
   const maxDistance = options.maxDistance ?? 1;
 
-  const projected = project(monzos, options);
+  let projected = project(monzos, options);
 
   const {connections, connectingMonzos} = connect(projected, maxDistance);
 
-  unprojectInPlace(connectingMonzos, options);
+  const unprojected = unproject(connectingMonzos, options);
 
   const vertices: Vertex[] = [];
   const edges: Edge[] = [];
@@ -264,11 +266,11 @@ export function spanLattice(monzos: number[][], options: LatticeOptions) {
     });
   }
 
-  for (let i = 0; i < connectingMonzos.length; ++i) {
+  for (const monzo of unprojected) {
     vertices.push({
       index: undefined,
-      x: dot(connectingMonzos[i], horizontalCoordinates),
-      y: dot(connectingMonzos[i], verticalCoordinates),
+      x: dot(monzo, horizontalCoordinates),
+      y: dot(monzo, verticalCoordinates),
     });
   }
 
@@ -284,6 +286,7 @@ export function spanLattice(monzos: number[][], options: LatticeOptions) {
   }
 
   if (options.edgeMonzos) {
+    projected = projected.concat(connectingMonzos);
     let ems = project(options.edgeMonzos, options);
     ems = ems.concat(ems.map(em => em.map(e => -e)));
     for (let i = 0; i < projected.length; ++i) {
@@ -296,7 +299,8 @@ export function spanLattice(monzos: number[][], options: LatticeOptions) {
               y1: vertices[i].y,
               x2: vertices[j].x,
               y2: vertices[j].y,
-              type: 'custom',
+              type:
+                i < monzos.length && j < monzos.length ? 'custom' : 'auxiliary',
             });
           }
         }

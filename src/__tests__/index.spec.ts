@@ -154,6 +154,7 @@ describe("Scott Dakota's PR24 lattice", () => {
     ];
     const options = scottDakota24();
     options.edgeMonzos = [[0, -2, -1]];
+    options.maxDistance = 2;
     const {vertices, edges} = spanLattice(monzos, options);
     expect(vertices).toEqual([
       {index: 0, x: 0, y: 0},
@@ -163,6 +164,7 @@ describe("Scott Dakota's PR24 lattice", () => {
       {index: 4, x: 26, y: -14},
       {index: 5, x: 57, y: -5},
       {index: 6, x: 88, y: 4},
+      {index: undefined, x: 119, y: 13},
     ]);
     expect(edges).toEqual([
       {x1: 0, y1: 0, x2: 31, y2: 9, type: 'primary'},
@@ -171,9 +173,12 @@ describe("Scott Dakota's PR24 lattice", () => {
       {x1: 31, y1: 9, x2: 57, y2: -5, type: 'primary'},
       {x1: 62, y1: 18, x2: 93, y2: 27, type: 'primary'},
       {x1: 62, y1: 18, x2: 88, y2: 4, type: 'primary'},
+      {x1: 93, y1: 27, x2: 119, y2: 13, type: 'auxiliary'},
       {x1: 26, y1: -14, x2: 57, y2: -5, type: 'primary'},
       {x1: 57, y1: -5, x2: 88, y2: 4, type: 'primary'},
+      {x1: 88, y1: 4, x2: 119, y2: 13, type: 'auxiliary'},
       {x1: 0, y1: 0, x2: 88, y2: 4, type: 'custom'},
+      {x1: 31, y1: 9, x2: 119, y2: 13, type: 'auxiliary'},
     ]);
   });
 
