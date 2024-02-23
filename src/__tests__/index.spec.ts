@@ -124,6 +124,21 @@ describe('Kraig Grady lattice', () => {
       {x1: 0, y1: -40, x2: 40, y2: -40, type: 'auxiliary'},
     ]);
   });
+
+  it('works in 3.2.5', () => {
+    const monzos = [[0, 1], [1], [0, 0, 1]];
+    const options = kraigGrady9(1);
+    const {vertices, edges} = spanLattice(monzos, options);
+    expect(vertices).toEqual([
+      {index: 0, x: 0, y: 0},
+      {index: 1, x: -23, y: -45},
+      {index: 2, x: 0, y: -40},
+    ]);
+    expect(edges).toEqual([
+      {x1: 0, y1: 0, x2: -23, y2: -45, type: 'primary'},
+      {x1: 0, y1: 0, x2: 0, y2: -40, type: 'primary'},
+    ]);
+  });
 });
 
 describe("Scott Dakota's PR24 lattice", () => {

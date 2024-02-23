@@ -26,7 +26,6 @@ export type LatticeOptions = {
   horizontalCoordinates: number[];
   verticalCoordinates: number[];
   maxDistance?: number;
-  equaveIndex?: number;
   edgeMonzos?: number[][];
 };
 
@@ -185,10 +184,44 @@ function connect(monzos: number[][], maxDistance: number) {
   };
 }
 
-function prepare(monzo: number[], equaveIndex: number) {
-  const result = [...monzo];
-  result.splice(equaveIndex, 1);
-  return result;
+function project(monzos: number[][], options: LatticeOptions) {
+  const {horizontalCoordinates, verticalCoordinates} = options;
+  const projected = monzos.map(m => [...m]);
+  const limit = Math.max(
+    horizontalCoordinates.length,
+    verticalCoordinates.length
+  );
+  for (const m of projected) {
+    m.length = Math.min(limit, m.length);
+  }
+  for (let i = limit - 1; i >= 0; --i) {
+    if (horizontalCoordinates[i] || verticalCoordinates[i]) {
+      continue;
+    }
+    for (const m of projected) {
+      m.splice(i, 1);
+    }
+  }
+  return projected;
+}
+
+function unprojectInPlace(monzos: number[][], options: LatticeOptions) {
+  if (!monzos.length) {
+    return;
+  }
+  const {horizontalCoordinates, verticalCoordinates} = options;
+  const limit = Math.max(
+    horizontalCoordinates.length,
+    verticalCoordinates.length
+  );
+  for (let i = 0; i < limit; ++i) {
+    if (horizontalCoordinates[i] || verticalCoordinates[i]) {
+      continue;
+    }
+    for (const m of monzos) {
+      m.splice(i, 0, 0);
+    }
+  }
 }
 
 /**
@@ -201,16 +234,14 @@ function prepare(monzo: number[], equaveIndex: number) {
  * @returns Vertices and edges of the graph.
  */
 export function spanLattice(monzos: number[][], options: LatticeOptions) {
-  const equaveIndex = options.equaveIndex ?? 0;
+  const {horizontalCoordinates, verticalCoordinates} = options;
   const maxDistance = options.maxDistance ?? 1;
-  monzos = monzos.map(m => prepare(m, equaveIndex));
-  const horizontalCoordinates = prepare(
-    options.horizontalCoordinates,
-    equaveIndex
-  );
-  const verticalCoordinates = prepare(options.verticalCoordinates, equaveIndex);
 
-  const {connections, connectingMonzos} = connect(monzos, maxDistance);
+  const projected = project(monzos, options);
+
+  const {connections, connectingMonzos} = connect(projected, maxDistance);
+
+  unprojectInPlace(connectingMonzos, options);
 
   const vertices: Vertex[] = [];
   const edges: Edge[] = [];
@@ -243,11 +274,11 @@ export function spanLattice(monzos: number[][], options: LatticeOptions) {
   }
 
   if (options.edgeMonzos) {
-    let ems = options.edgeMonzos.map(em => prepare(em, equaveIndex));
+    let ems = project(options.edgeMonzos, options);
     ems = ems.concat(ems.map(em => em.map(e => -e)));
-    for (let i = 0; i < monzos.length; ++i) {
-      for (let j = i + 1; j < monzos.length; ++j) {
-        const diff = sub(monzos[i], monzos[j]);
+    for (let i = 0; i < projected.length; ++i) {
+      for (let j = i + 1; j < projected.length; ++j) {
+        const diff = sub(projected[i], projected[j]);
         for (const em of ems) {
           if (monzosEqual(diff, em)) {
             edges.push({
@@ -343,10 +374,13 @@ export function modVal(
  * @returns An array of horizontal coordinates for each prime and the same for vertical coordinates.
  */
 export function kraigGrady9(equaveIndex = 0): LatticeOptions {
+  const horizontalCoordinates = [...KRAIG_GRADY_X];
+  const verticalCoordinates = [...KRAIG_GRADY_Y];
+  horizontalCoordinates[equaveIndex] = 0;
+  verticalCoordinates[equaveIndex] = 0;
   return {
-    horizontalCoordinates: [...KRAIG_GRADY_X],
-    verticalCoordinates: [...KRAIG_GRADY_Y],
-    equaveIndex,
+    horizontalCoordinates,
+    verticalCoordinates,
   };
 }
 
@@ -367,7 +401,6 @@ export function scottDakota24(logs?: number[]): LatticeOptions {
   return {
     horizontalCoordinates,
     verticalCoordinates,
-    equaveIndex: 0,
   };
 }
 
@@ -389,7 +422,6 @@ export function primeRing72(logs?: number[]): LatticeOptions {
   return {
     horizontalCoordinates,
     verticalCoordinates,
-    equaveIndex: 0,
   };
 }
 
