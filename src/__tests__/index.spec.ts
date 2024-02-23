@@ -176,6 +176,19 @@ describe("Scott Dakota's PR24 lattice", () => {
       {x1: 0, y1: 0, x2: 88, y2: 4, type: 'custom'},
     ]);
   });
+
+  it('works with max distance = 0', () => {
+    const monzos = [[], [0, 1], [0, 0, 1]];
+    const options = scottDakota24();
+    options.maxDistance = 0;
+    const {vertices, edges} = spanLattice(monzos, options);
+    expect(vertices).toEqual([
+      {index: 0, x: 0, y: 0},
+      {index: 1, x: 31, y: 9},
+      {index: 2, x: 26, y: -14},
+    ]);
+    expect(edges).toHaveLength(0);
+  });
 });
 
 describe('Prime ring 72 coordinates', () => {

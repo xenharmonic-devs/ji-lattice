@@ -163,18 +163,20 @@ function connect(monzos: number[][], maxDistance: number) {
       }
     }
   }
-  const primaryLength = monzos.length;
-  monzos = monzos.concat(connectingMonzos);
-  for (let i = 0; i < monzos.length; ++i) {
-    for (let j = i + 1; j < monzos.length; ++j) {
-      const distance = taxicabDistance(monzos[i], monzos[j]);
-      if (distance === 1) {
-        connections.push({
-          index1: i,
-          index2: j,
-          type:
-            i < primaryLength && j < primaryLength ? 'primary' : 'auxiliary',
-        });
+  if (maxDistance >= 1) {
+    const primaryLength = monzos.length;
+    monzos = monzos.concat(connectingMonzos);
+    for (let i = 0; i < monzos.length; ++i) {
+      for (let j = i + 1; j < monzos.length; ++j) {
+        const distance = taxicabDistance(monzos[i], monzos[j]);
+        if (distance === 1) {
+          connections.push({
+            index1: i,
+            index2: j,
+            type:
+              i < primaryLength && j < primaryLength ? 'primary' : 'auxiliary',
+          });
+        }
       }
     }
   }
