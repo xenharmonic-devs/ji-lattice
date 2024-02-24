@@ -1,68 +1,132 @@
 import {LOG_PRIMES, dot, mmod, monzosEqual, sub} from 'xen-dev-utils';
 
+/**
+ * The type of an edge connecting two vertices or a gridline.
+ *
+ * `"primary"`: Prime-wise connection between two vertices.
+ *
+ * `"custom"`: User-defined connection between two vertices.
+ *
+ * `"auxiliary"`: Connection where at least one vertex is auxiliary.
+ *
+ * `"gridline"`: Line extending across the screen.
+ */
 export type EdgeType = 'primary' | 'custom' | 'auxiliary' | 'gridline';
 
+/**
+ * A vertex of a 2D graph.
+ */
 export type Vertex = {
+  /** Horizontal coordinate. */
   x: number;
+  /** Vertical coordinate. */
   y: number;
+  /** Index to input array. */
   index?: number;
 };
 
+/**
+ * A vertex of a 2D graph.
+ */
 export type MultiVertex = {
+  /** Horizontal coordinate. */
   x: number;
+  /** Vertical coordinate. */
   y: number;
+  /** Indices to input array. */
   indices: number[];
 };
 
+/**
+ * An edge connecting two vertices of a 2D graph.
+ */
 export type Edge = {
+  /** First horizontal coordinate. */
   x1: number;
+  /** First vertical coordinate. */
   y1: number;
+  /** Second horizontal coordinate. */
   x2: number;
+  /** Second vertical coordinate. */
   y2: number;
+  /** Type of connection. */
   type: EdgeType;
 };
 
-export type Connection = {
+type Connection = {
   index1: number;
   index2: number;
   type: EdgeType;
 };
 
+/**
+ * Options for {@link spanLattice}.
+ */
 export type LatticeOptions = {
+  /** Mapping for prime x-coordinates. */
   horizontalCoordinates: number[];
+  /** Mapping for prime y-coordinates. */
   verticalCoordinates: number[];
+  /** Maximum prime-wise distance for connecting two inputs. */
   maxDistance?: number;
+  /** Prime-count vectors of connections in addition the the primes. */
   edgeMonzos?: number[][];
 };
 
+/**
+ * Options for gridlines of {@link spanGrid}.
+ */
 export type GridLineOptions = {
+  /** Span gridlines in the first direction. */
   delta1?: boolean;
+  /** Span gridlines in the second direction. */
   delta2?: boolean;
+  /** Span gridlines in the difference of the primary directions. */
   diagonal1?: boolean;
+  /** Span gridlines in the sum of the primary directions. */
   diagonal2?: boolean;
 };
 
+/**
+ * Options for {@link spanGrid}.
+ */
 export type GridOptions = {
+  /** Number of scale steps in the interval of equivalence. */
   modulus: number;
 
+  /** Number of scale steps to take in the first direction. */
   delta1: number;
+  /** Number of horizontal screen units to advance in the first direction. */
   delta1X: number;
+  /** Number of vertical screen units to advance in the first direction. */
   delta1Y: number;
 
+  /** Number of scale steps to take in the second direction. */
   delta2: number;
+  /** Number of horizontal screen units to advance in the first direction. */
   delta2X: number;
+  /** Number of vertical screen units to advance in the first direction. */
   delta2Y: number;
 
+  /** Low horizontal extent of view in screen units. */
   minX: number;
+  /** High horizontal extent of view in screen units. */
   maxX: number;
+  /** Low vertical extent of view in screen units. */
   minY: number;
+  /** High vertical extent of view in screen units. */
   maxY: number;
 
+  /** Connect vertices separated by these screen units. */
   edgeVectors?: number[][];
+  /** Options for calculating gridlines. */
   gridLines?: GridLineOptions;
 
+  /** Search range for discovering vertices and edges in view. */
   range?: number;
+  /** Maximum number of vertices to return. */
   maxVertices?: number;
+  /** Maximum number of edges to return. */
   maxEdges?: number;
 };
 
@@ -239,10 +303,7 @@ function unproject(monzos: number[][], options: LatticeOptions) {
 /**
  * Compute vertices and edges for a 2D graph representing the lattice of a musical scale in just intonation.
  * @param monzos Prime exponents of the musical intervals in the scale.
- * @param horizontalCoordinates Horizontal coordinates for each prime.
- * @param verticalCoordinates Vertical coordinates for each prime.
- * @param maxDistance Maximum distance to connect to (1 or 2).
- * @param equaveIndex Index of the prime of equivalence to ignore during distance calculation.
+ * @param options Options for connecting vertices in the graph.
  * @returns Vertices and edges of the graph.
  */
 export function spanLattice(monzos: number[][], options: LatticeOptions) {
@@ -475,6 +536,12 @@ function gridline(
   return {x1, y1, x2, y2, type: 'gridline'};
 }
 
+/**
+ * Span a grid representing an equal temperament with the given steps as vertices.
+ * @param steps Equally tempered scale degrees to feature in the graph.
+ * @param options Options for connecting scale degrees and calculating gridlines.
+ * @returns Vertices and edges of the graph.
+ */
 export function spanGrid(steps: number[], options: GridOptions) {
   const {
     modulus,
@@ -613,6 +680,12 @@ export function spanGrid(steps: number[], options: GridOptions) {
   return {vertices, edges};
 }
 
+/**
+ * Compute the shorest edge corresponding to the given equally tempered difference.
+ * @param step Difference between two equally tempered scale degrees.
+ * @param options Options for grid geometry.
+ * @returns Array of horizontal and vertical screen coordinates of the shortest edge found.
+ */
 export function shortestEdge(step: number, options: GridOptions) {
   const {
     modulus,
