@@ -1,7 +1,7 @@
 {
   "name": "ji-lattice",
   "version": "0.0.0",
-  "description": "Algorithms for projecting just intonation scales onto the screen.",
+  "description": "Algorithms for projecting just intonation and equally tempered scales onto the screen.",
   "funding": {
     "type": "github",
     "url": "https://github.com/sponsors/frostburn"
@@ -34,7 +34,9 @@
     "Projection",
     "Lattice",
     "Kraig",
-    "Grady"
+    "Grady",
+    "Equal",
+    "Temperament"
   ],
   "author": "Lumi Pakkanen",
   "license": "MIT",
