@@ -446,6 +446,9 @@ function gridline(
   vY: number,
   options: GridOptions
 ): Edge | undefined {
+  if (!vX && !vY) {
+    return undefined;
+  }
   const {minX, maxX, minY, maxY} = options;
   const range = options.range ?? 100;
   let j, x, y;
@@ -517,6 +520,12 @@ export function spanGrid(steps: number[], options: GridOptions) {
           if (vertices.length >= maxVertices) {
             break search;
           }
+          if (!delta1X && !delta1Y) {
+            break search;
+          }
+          if (!delta2X && !delta2Y) {
+            break search;
+          }
         }
       }
     }
@@ -554,15 +563,29 @@ export function spanGrid(steps: number[], options: GridOptions) {
       if (edges.length >= maxEdges) {
         break;
       }
-      const uX = delta1X * i;
-      const uY = delta1Y * i;
-      let edge;
       if (gridLines.delta1) {
-        edge = gridline(delta2X * i, delta2Y * i, delta1X, delta1Y, options);
+        const edge = gridline(
+          delta2X * i,
+          delta2Y * i,
+          delta1X,
+          delta1Y,
+          options
+        );
         if (edge) {
           edges.push(edge);
         }
       }
+      if (!delta2X && !delta2Y) {
+        break;
+      }
+    }
+    for (let i = -range; i <= range; ++i) {
+      if (edges.length >= maxEdges) {
+        break;
+      }
+      let edge;
+      const uX = delta1X * i;
+      const uY = delta1Y * i;
       if (gridLines.delta2) {
         edge = gridline(uX, uY, delta2X, delta2Y, options);
         if (edge) {
@@ -580,6 +603,9 @@ export function spanGrid(steps: number[], options: GridOptions) {
         if (edge) {
           edges.push(edge);
         }
+      }
+      if (!delta1X && !delta1Y) {
+        break;
       }
     }
   }
@@ -617,6 +643,12 @@ export function shortestEdge(step: number, options: GridOptions) {
         if (s === step) {
           vertices.push({x, y});
           if (vertices.length >= maxVertices) {
+            break search;
+          }
+          if (!delta1X && !delta1Y) {
+            break search;
+          }
+          if (!delta2X && !delta2Y) {
             break search;
           }
         }

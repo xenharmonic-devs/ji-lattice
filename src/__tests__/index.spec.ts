@@ -287,14 +287,14 @@ describe('Grid spanner', () => {
       {x1: 0, y1: 0, x2: 1, y2: 0, type: 'custom'},
       {x1: 1, y1: 0, x2: 2, y2: 0, type: 'custom'},
       {x1: -3, y1: 2, x2: 3, y2: 2, type: 'gridline'},
-      {x1: -2, y1: 3, x2: -2, y2: -3, type: 'gridline'},
       {x1: -3, y1: 1, x2: 3, y2: 1, type: 'gridline'},
-      {x1: -1, y1: 3, x2: -1, y2: -3, type: 'gridline'},
       {x1: -3, y1: -0, x2: 3, y2: 0, type: 'gridline'},
-      {x1: 0, y1: 3, x2: 0, y2: -3, type: 'gridline'},
       {x1: -3, y1: -1, x2: 3, y2: -1, type: 'gridline'},
-      {x1: 1, y1: 3, x2: 1, y2: -3, type: 'gridline'},
       {x1: -3, y1: -2, x2: 3, y2: -2, type: 'gridline'},
+      {x1: -2, y1: 3, x2: -2, y2: -3, type: 'gridline'},
+      {x1: -1, y1: 3, x2: -1, y2: -3, type: 'gridline'},
+      {x1: 0, y1: 3, x2: 0, y2: -3, type: 'gridline'},
+      {x1: 1, y1: 3, x2: 1, y2: -3, type: 'gridline'},
       {x1: 2, y1: 3, x2: 2, y2: -3, type: 'gridline'},
     ]);
   });
@@ -418,5 +418,38 @@ describe('Grid spanner', () => {
     const {vertices, edges} = spanGrid(steps, options);
     expect(vertices.length).toBeLessThanOrEqual(1000);
     expect(edges.length).toBeLessThanOrEqual(1000);
+  });
+
+  it('has sane behavior with insane coordinates', () => {
+    const steps = [2, 4, 5, 7, 9, 11, 12];
+
+    const options: GridOptions = {
+      modulus: 12,
+      delta1: 19,
+      delta1X: 1,
+      delta1Y: 0,
+      delta2: 28,
+      delta2X: 0,
+      delta2Y: 0,
+      minX: -12,
+      maxX: 12,
+      minY: -6,
+      maxY: 6,
+      edgeVectors: [
+        [1, 0],
+        [0, 0],
+      ],
+      gridLines: {
+        delta1: true,
+        delta2: true,
+        diagonal1: false,
+        diagonal2: false,
+      },
+    };
+
+    const {vertices, edges} = spanGrid(steps, options);
+
+    expect(vertices).toEqual([{x: -12, y: -0, indices: [6]}]);
+    expect(edges).toEqual([{x1: -13, y1: -0, x2: 13, y2: 0, type: 'gridline'}]);
   });
 });
