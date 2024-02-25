@@ -155,6 +155,7 @@ describe("Scott Dakota's PR24 lattice", () => {
     const options = scottDakota24();
     options.edgeMonzos = [[0, -2, -1]];
     options.maxDistance = 2;
+    options.mergeEdges = true;
     const {vertices, edges} = spanLattice(monzos, options);
     expect(vertices).toEqual([
       {index: 0, x: 0, y: 0},
@@ -167,18 +168,15 @@ describe("Scott Dakota's PR24 lattice", () => {
       {index: undefined, x: 119, y: 13},
     ]);
     expect(edges).toEqual([
-      {x1: 0, y1: 0, x2: 31, y2: 9, type: 'primary'},
-      {x1: 0, y1: 0, x2: 26, y2: -14, type: 'primary'},
-      {x1: 31, y1: 9, x2: 62, y2: 18, type: 'primary'},
-      {x1: 31, y1: 9, x2: 57, y2: -5, type: 'primary'},
-      {x1: 62, y1: 18, x2: 93, y2: 27, type: 'primary'},
-      {x1: 62, y1: 18, x2: 88, y2: 4, type: 'primary'},
-      {x1: 93, y1: 27, x2: 119, y2: 13, type: 'auxiliary'},
-      {x1: 26, y1: -14, x2: 57, y2: -5, type: 'primary'},
-      {x1: 57, y1: -5, x2: 88, y2: 4, type: 'primary'},
-      {x1: 88, y1: 4, x2: 119, y2: 13, type: 'auxiliary'},
-      {x1: 0, y1: 0, x2: 88, y2: 4, type: 'custom'},
-      {x1: 31, y1: 9, x2: 119, y2: 13, type: 'auxiliary'},
+      {x1: 0, x2: 93, y1: 0, y2: 27, type: 'primary'},
+      {x1: 0, x2: 26, y1: 0, y2: -14, type: 'primary'},
+      {x1: 0, x2: 88, y1: 0, y2: 4, type: 'custom'},
+      {x1: 26, x2: 88, y1: -14, y2: 4, type: 'primary'},
+      {x1: 31, x2: 57, y1: 9, y2: -5, type: 'primary'},
+      {x1: 31, x2: 119, y1: 9, y2: 13, type: 'auxiliary'},
+      {x1: 62, x2: 88, y1: 18, y2: 4, type: 'primary'},
+      {x1: 88, x2: 119, y1: 4, y2: 13, type: 'auxiliary'},
+      {x1: 93, x2: 119, y1: 27, y2: 13, type: 'auxiliary'},
     ]);
   });
 
@@ -266,6 +264,7 @@ describe('Grid spanner', () => {
         [0, -1],
       ],
       gridLines: {delta1: true, delta2: true},
+      mergeEdges: true,
     });
     expect(vertices).toEqual([
       {x: -2, y: 2, indices: [1]}, // [x]
@@ -278,14 +277,12 @@ describe('Grid spanner', () => {
       {x: 1, y: 0, indices: [3]}, // Fifth
       {x: 2, y: 0, indices: [1]}, // Second
     ]);
+
     expect(edges).toEqual([
-      {x1: -2, y1: 2, x2: -1, y2: 2, type: 'custom'},
-      {x1: -2, y1: -1, x2: -1, y2: -1, type: 'custom'},
-      {x1: -1, y1: 2, x2: 0, y2: 2, type: 'custom'},
-      {x1: -1, y1: -1, x2: 0, y2: -1, type: 'custom'},
+      {x1: -2, y1: 2, x2: 0, y2: 2, type: 'custom'},
+      {x1: -2, y1: -1, x2: 0, y2: -1, type: 'custom'},
+      {x1: 0, y1: 0, x2: 2, y2: 0, type: 'custom'},
       {x1: 0, y1: 0, x2: 0, y2: -1, type: 'custom'},
-      {x1: 0, y1: 0, x2: 1, y2: 0, type: 'custom'},
-      {x1: 1, y1: 0, x2: 2, y2: 0, type: 'custom'},
       {x1: -3, y1: 2, x2: 3, y2: 2, type: 'gridline'},
       {x1: -3, y1: 1, x2: 3, y2: 1, type: 'gridline'},
       {x1: -3, y1: -0, x2: 3, y2: 0, type: 'gridline'},
@@ -417,7 +414,7 @@ describe('Grid spanner', () => {
 
     const {vertices, edges} = spanGrid(steps, options);
     expect(vertices.length).toBeLessThanOrEqual(1000);
-    expect(edges.length).toBeLessThanOrEqual(1000);
+    expect(edges.length).toBeLessThanOrEqual(2000);
   });
 
   it('has sane behavior with insane coordinates', () => {

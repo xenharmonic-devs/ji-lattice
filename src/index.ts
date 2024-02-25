@@ -71,6 +71,8 @@ export type LatticeOptions = {
   maxDistance?: number;
   /** Prime-count vectors of connections in addition the the primes. */
   edgeMonzos?: number[][];
+  /** Flag to merge short edges into a long ones wherever possible. */
+  mergeEdges?: boolean;
 };
 
 /**
@@ -122,6 +124,9 @@ export type GridOptions = {
   /** Options for calculating gridlines. */
   gridLines?: GridLineOptions;
 
+  /** Flag to merge short edges into a long ones wherever possible. */
+  mergeEdges?: boolean;
+
   /** Search range for discovering vertices and edges in view. */
   range?: number;
   /** Maximum number of vertices to return. */
@@ -146,6 +151,55 @@ const SCOTT_DAKOTA_SINE = [
   0,   -5,  -9,  -12, -14, -16,
   -17, -16, -14, -12, -9,  -5
 ];
+
+/**
+ * Combine edges that share an endpoint and slope into longer ones.
+ * @param edges Large number of short edges to merge.
+ * @returns Smaller number of long edges.
+ */
+export function mergeEdges(edges: Edge[]) {
+  // Choose a canonical orientation.
+  const oriented: Edge[] = [];
+  for (const edge of edges) {
+    if (edge.x2 < edge.x1 || (edge.x2 === edge.x1 && edge.y2 < edge.y1)) {
+      oriented.push({
+        x1: edge.x2,
+        y1: edge.y2,
+        x2: edge.x1,
+        y2: edge.y1,
+        type: edge.type,
+      });
+    } else {
+      oriented.push(edge);
+    }
+  }
+  oriented.sort((a, b) => a.x1 - b.x1 || a.y1 - b.y1);
+  const result: Edge[] = [];
+  const spent = new Set<number>();
+  for (let i = 0; i < oriented.length; ++i) {
+    if (spent.has(i)) {
+      continue;
+    }
+    // eslint-disable-next-line prefer-const
+    let {x1, y1, x2, y2, type} = oriented[i];
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    for (let j = i + 1; j < oriented.length; ++j) {
+      const e = oriented[j];
+      if (e.x1 === x2 && e.y1 === y2 && e.type === type) {
+        const dex = e.x2 - e.x1;
+        const dey = e.y2 - e.y1;
+        if (dex * dy === dx * dey) {
+          x2 = e.x2;
+          y2 = e.y2;
+          spent.add(j);
+        }
+      }
+    }
+    result.push({x1, x2, y1, y2, type});
+  }
+  return result;
+}
 
 /**
  * Calculate the taxicab norm / Manhattan distance between two vectors.
@@ -317,7 +371,7 @@ export function spanLattice(monzos: number[][], options: LatticeOptions) {
   const unprojected = unproject(connectingMonzos, options);
 
   const vertices: Vertex[] = [];
-  const edges: Edge[] = [];
+  let edges: Edge[] = [];
 
   for (let index = 0; index < monzos.length; ++index) {
     vertices.push({
@@ -367,6 +421,10 @@ export function spanLattice(monzos: number[][], options: LatticeOptions) {
         }
       }
     }
+  }
+
+  if (options.mergeEdges) {
+    edges = mergeEdges(edges);
   }
 
   return {
@@ -560,7 +618,7 @@ export function spanGrid(steps: number[], options: GridOptions) {
   } = options;
   const range = options.range ?? 100;
   const maxVertices = options.maxVertices ?? 1000;
-  const maxEdges = options.maxEdges ?? 1000;
+  const maxEdges = options.maxEdges ?? 2000;
 
   steps = steps.map(s => mmod(s, modulus));
 
@@ -601,23 +659,56 @@ export function spanGrid(steps: number[], options: GridOptions) {
   const edges: Edge[] = [];
 
   if (edgeVectors) {
-    let evs = [...edgeVectors];
-    evs = evs.concat(evs.map(ev => ev.map(e => -e)));
-    search: for (let i = 0; i < vertices.length; ++i) {
-      for (let j = i + 1; j < vertices.length; ++j) {
-        const dx = vertices[i].x - vertices[j].x;
-        const dy = vertices[i].y - vertices[j].y;
-        for (const [vx, vy] of evs) {
-          if (dx === vx && dy === vy) {
-            edges.push({
-              x1: vertices[i].x,
-              y1: vertices[i].y,
-              x2: vertices[j].x,
-              y2: vertices[j].y,
-              type: 'custom',
-            });
-            if (edges.length >= maxEdges) {
-              break search;
+    if (options.mergeEdges) {
+      search: for (const [vx, vy] of edgeVectors) {
+        const spent = new Set<number>();
+        for (let i = 0; i < vertices.length; ++i) {
+          if (spent.has(i)) {
+            continue;
+          }
+          let x1 = vertices[i].x;
+          let y1 = vertices[i].y;
+          let x2 = vertices[i].x;
+          let y2 = vertices[i].y;
+          for (let j = i + 1; j < vertices.length; ++j) {
+            if (vertices[j].x - x2 === vx && vertices[j].y - y2 === vy) {
+              x2 = vertices[j].x;
+              y2 = vertices[j].y;
+              spent.add(j);
+            }
+            if (x1 - vertices[j].x === vx && y1 - vertices[j].y === vy) {
+              x1 = vertices[j].x;
+              y1 = vertices[j].y;
+              spent.add(j);
+            }
+          }
+          if (x1 !== x2 || y1 !== y2) {
+            edges.push({x1, y1, x2, y2, type: 'custom'});
+          }
+          if (edges.length >= maxEdges) {
+            break search;
+          }
+        }
+      }
+    } else {
+      let evs = [...edgeVectors];
+      evs = evs.concat(evs.map(ev => ev.map(e => -e)));
+      search: for (let i = 0; i < vertices.length; ++i) {
+        for (let j = i + 1; j < vertices.length; ++j) {
+          const dx = vertices[i].x - vertices[j].x;
+          const dy = vertices[i].y - vertices[j].y;
+          for (const [vx, vy] of evs) {
+            if (dx === vx && dy === vy) {
+              edges.push({
+                x1: vertices[i].x,
+                y1: vertices[i].y,
+                x2: vertices[j].x,
+                y2: vertices[j].y,
+                type: 'custom',
+              });
+              if (edges.length >= maxEdges) {
+                break search;
+              }
             }
           }
         }
