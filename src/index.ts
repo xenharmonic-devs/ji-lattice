@@ -540,22 +540,85 @@ export function scottDakota24(logs?: number[]): LatticeOptions {
 /**
  * Compute prime ring 72 coordinates.
  * @param logs Logarithms of (formal) primes with the prime of equivalence first. Defaults to the actual primes.
+ * @param round Round coordinates to nearest integers.
  * @returns An array of horizontal coordinates for each prime and the same for vertical coordinates.
  */
-export function primeRing72(logs?: number[]): LatticeOptions {
+export function primeRing72(logs?: number[], round = true): LatticeOptions {
   logs ??= LOG_PRIMES.slice(0, 72);
   const mv = modVal(logs, 72);
   const horizontalCoordinates: number[] = [];
   const verticalCoordinates: number[] = [];
   for (const steps of mv) {
     const theta = (Math.PI * steps) / 36;
-    horizontalCoordinates.push(37 - Math.round(Math.cos(theta) * 36.7));
-    verticalCoordinates.push(-Math.round(Math.sin(theta) * 36.7));
+    if (round) {
+      horizontalCoordinates.push(37 - Math.round(Math.cos(theta) * 36.7));
+      verticalCoordinates.push(-Math.round(Math.sin(theta) * 36.7));
+    } else {
+      horizontalCoordinates.push(36.7 - Math.cos(theta) * 36.7);
+      verticalCoordinates.push(-Math.sin(theta) * 36.7);
+    }
   }
   return {
     horizontalCoordinates,
     verticalCoordinates,
   };
+}
+
+/**
+ * Rotate coordinates to make one of the primes horizontal.
+ * @param options Lattice options with coordinates to modify in-place.
+ * @param horizontalIndex Index of prime to make horizontal.
+ * @param tonnetzIndex Index of another prime to align with the up-left direction of a triangular lattice. Coordinates are sheared as necessary.
+ */
+export function align(
+  options: LatticeOptions,
+  horizontalIndex: number,
+  tonnetzIndex?: number
+) {
+  const {horizontalCoordinates, verticalCoordinates} = options;
+
+  if (tonnetzIndex === undefined) {
+    const x = horizontalCoordinates[horizontalIndex];
+    const y = verticalCoordinates[horizontalIndex];
+    const c = 1 / Math.sqrt(1 + (y * y) / (x * x));
+    const s = (y / x) * c;
+    for (let i = 0; i < horizontalCoordinates.length; ++i) {
+      const u = horizontalCoordinates[i];
+      const v = verticalCoordinates[i];
+      horizontalCoordinates[i] = u * c + v * s;
+      verticalCoordinates[i] = v * c - u * s;
+    }
+  } else {
+    const x1 = horizontalCoordinates[horizontalIndex];
+    const y1 = verticalCoordinates[horizontalIndex];
+    const x2 = horizontalCoordinates[tonnetzIndex];
+    const y2 = verticalCoordinates[tonnetzIndex];
+
+    const r1 = Math.hypot(x1, y1);
+    const R2 = x2 * x2 + y2 * y2;
+    const u2 = 0.5 * r1;
+    // Solve: u2^2 + v2^2 = R2
+    const v2 = -Math.sqrt(R2 - u2 * u2);
+
+    // Solve:
+    // [u_i, v_i] = A [x_i, y_i]
+    // u1 = r1 = a00 x1 + a10 y1
+    // v1 = 0  = a01 x1 + a11 y1
+    // u2      = a00 x2 + a10 y2
+    // v2      = a01 x2 + a11 y2
+
+    const a00 = (r1 * y2 - u2 * y1) / (x1 * y2 - x2 * y1);
+    const a01 = (-v2 * y1) / (x1 * y2 - x2 * y1);
+    const a10 = (-r1 * x2 + u2 * x1) / (x1 * y2 - x2 * y1);
+    const a11 = (v2 * x1) / (x1 * y2 - x2 * y1);
+
+    for (let i = 0; i < horizontalCoordinates.length; ++i) {
+      const u = horizontalCoordinates[i];
+      const v = verticalCoordinates[i];
+      horizontalCoordinates[i] = a00 * u + a10 * v;
+      verticalCoordinates[i] = a01 * u + a11 * v;
+    }
+  }
 }
 
 function gridline(
