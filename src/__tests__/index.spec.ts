@@ -2,6 +2,7 @@ import {describe, it, expect} from 'vitest';
 import {Fraction, LOG_PRIMES, circleDistance, toMonzo} from 'xen-dev-utils';
 import {
   GridOptions,
+  align,
   kraigGrady9,
   modVal,
   primeRing72,
@@ -241,6 +242,67 @@ describe('Prime ring 72 coordinates', () => {
       {x1: 24, y1: 34, x2: 77, y2: 1, type: 'auxiliary'},
       {x1: 0, y1: 0, x2: -69, y2: -18, type: 'auxiliary'},
     ]);
+  });
+});
+
+describe('Coordinate aligner', () => {
+  it('aligns PR72 horizontally by rotating', () => {
+    const options = primeRing72(undefined, false);
+    const lengths: number[] = [];
+    for (let i = 0; i < options.horizontalCoordinates.length; ++i) {
+      lengths.push(
+        Math.hypot(
+          options.horizontalCoordinates[i],
+          options.verticalCoordinates[i]
+        )
+      );
+    }
+    align(options, 1);
+    expect(options.horizontalCoordinates[0]).toBeCloseTo(0);
+    expect(options.verticalCoordinates[0]).toBeCloseTo(0);
+    expect(options.horizontalCoordinates[1]).toBeCloseTo(lengths[1]);
+    expect(options.verticalCoordinates[1]).toBeCloseTo(0);
+    for (let i = 0; i < options.horizontalCoordinates.length; ++i) {
+      expect(
+        Math.hypot(
+          options.horizontalCoordinates[i],
+          options.verticalCoordinates[i]
+        )
+      ).toBeCloseTo(lengths[i]);
+    }
+  });
+
+  it('aligns PR72 with a Tonnetz lattice by shearing', () => {
+    const options = primeRing72(undefined, false);
+    const lengths: number[] = [];
+    for (let i = 0; i < options.horizontalCoordinates.length; ++i) {
+      lengths.push(
+        Math.hypot(
+          options.horizontalCoordinates[i],
+          options.verticalCoordinates[i]
+        )
+      );
+    }
+    align(options, 1, 2);
+    expect(options.horizontalCoordinates[0]).toBeCloseTo(0);
+    expect(options.verticalCoordinates[0]).toBeCloseTo(0);
+    expect(options.horizontalCoordinates[1]).toBeCloseTo(lengths[1]);
+    expect(options.verticalCoordinates[1]).toBeCloseTo(0);
+    expect(options.horizontalCoordinates[2]).toBeCloseTo(lengths[1] * 0.5);
+    expect(
+      Math.hypot(
+        options.horizontalCoordinates[2],
+        options.verticalCoordinates[2]
+      )
+    ).toBeCloseTo(lengths[2]);
+    for (let i = 3; i < options.horizontalCoordinates.length; ++i) {
+      expect(
+        Math.hypot(
+          options.horizontalCoordinates[i],
+          options.verticalCoordinates[i]
+        )
+      ).toBeCloseTo(lengths[i], -1);
+    }
   });
 });
 
