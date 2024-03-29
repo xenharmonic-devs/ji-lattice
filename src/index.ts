@@ -1,5 +1,8 @@
 import {LOG_PRIMES, dot, mmod, monzosEqual, sub} from 'xen-dev-utils';
 
+// Small radius of tolerance to accept near unit distances between fractional coordinates as edges.
+const EPSILON = 1e-6;
+
 /**
  * The type of an edge connecting two vertices or a gridline.
  *
@@ -202,20 +205,39 @@ export function mergeEdges(edges: Edge[]) {
 }
 
 /**
- * Calculate the taxicab norm / Manhattan distance between two vectors.
+ * Calculate the taxicab norm / Manhattan distance between two integral vectors.
+ * Restrict movement to whole steps for fractional vectors.
+ * Has a tolerance for small errors.
  * @param a Prime exponents of a musical interval.
  * @param b Prime exponents of a musical interval.
+ * @returns Integer representing the number of "moves" required to reach `b`from `a`. `NaN` if no legal moves exist.
  */
-function taxicabDistance(a: number[], b: number[]): number {
+function taxicabDistance(
+  a: number[],
+  b: number[],
+  tolerance = EPSILON
+): number {
   if (a.length > b.length) {
     return taxicabDistance(b, a);
   }
   let result = 0;
   for (let i = 0; i < a.length; ++i) {
-    result += Math.abs(a[i] - b[i]);
+    const distance = Math.abs(a[i] - b[i]);
+    const move = Math.round(distance);
+    if (Math.abs(distance - move) <= tolerance) {
+      result += move;
+    } else {
+      return NaN;
+    }
   }
   for (let i = a.length; i < b.length; ++i) {
-    result += Math.abs(b[i]);
+    const distance = Math.abs(b[i]);
+    const move = Math.round(distance);
+    if (Math.abs(distance - move) <= tolerance) {
+      result += move;
+    } else {
+      return NaN;
+    }
   }
   return result;
 }

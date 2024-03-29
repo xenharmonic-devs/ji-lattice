@@ -140,6 +140,23 @@ describe('Kraig Grady lattice', () => {
       {x1: 0, y1: 0, x2: 0, y2: -40, type: 'primary'},
     ]);
   });
+
+  it('connects fractional monzos separated by a near-unit edge', () => {
+    const monzos = [
+      [0, -1 / 3],
+      [0, 0.66666666],
+    ];
+    const options = kraigGrady9();
+    const {edges} = spanLattice(monzos, options);
+    expect(edges).toHaveLength(1);
+  });
+
+  it("doesn't connect fractional monzos separated by diagonal unit-edges", () => {
+    const monzos = [[], [0, 0.5, 0.5]];
+    const options = kraigGrady9();
+    const {edges} = spanLattice(monzos, options);
+    expect(edges).toHaveLength(0);
+  });
 });
 
 describe("Scott Dakota's PR24 lattice", () => {
