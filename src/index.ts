@@ -1,20 +1,8 @@
 import {LOG_PRIMES, dot, mmod, monzosEqual, sub} from 'xen-dev-utils';
-
-// Small radius of tolerance to accept near unit distances between fractional coordinates as edges.
-const EPSILON = 1e-6;
-
-/**
- * The type of an edge connecting two vertices or a gridline.
- *
- * `"primary"`: Prime-wise connection between two vertices.
- *
- * `"custom"`: User-defined connection between two vertices.
- *
- * `"auxiliary"`: Connection where at least one vertex is auxiliary.
- *
- * `"gridline"`: Line extending across the screen.
- */
-export type EdgeType = 'primary' | 'custom' | 'auxiliary' | 'gridline';
+import {EdgeType} from './types';
+import {connect, project, unproject} from './utils';
+export * from './types';
+export * from './lattice-3d';
 
 /**
  * A vertex of a 2D graph.
@@ -53,12 +41,6 @@ export type Edge = {
   /** Second vertical coordinate. */
   y2: number;
   /** Type of connection. */
-  type: EdgeType;
-};
-
-type Connection = {
-  index1: number;
-  index2: number;
   type: EdgeType;
 };
 
@@ -205,178 +187,6 @@ export function mergeEdges(edges: Edge[]) {
 }
 
 /**
- * Calculate the taxicab norm / Manhattan distance between two integral vectors.
- * Restrict movement to whole steps for fractional vectors.
- * Has a tolerance for small errors.
- * @param a Prime exponents of a musical interval.
- * @param b Prime exponents of a musical interval.
- * @returns Integer representing the number of "moves" required to reach `b`from `a`. `NaN` if no legal moves exist.
- */
-function taxicabDistance(
-  a: number[],
-  b: number[],
-  tolerance = EPSILON
-): number {
-  if (a.length > b.length) {
-    return taxicabDistance(b, a);
-  }
-  let result = 0;
-  for (let i = 0; i < a.length; ++i) {
-    const distance = Math.abs(a[i] - b[i]);
-    const move = Math.round(distance);
-    if (Math.abs(distance - move) <= tolerance) {
-      result += move;
-    } else {
-      return NaN;
-    }
-  }
-  for (let i = a.length; i < b.length; ++i) {
-    const distance = Math.abs(b[i]);
-    const move = Math.round(distance);
-    if (Math.abs(distance - move) <= tolerance) {
-      result += move;
-    } else {
-      return NaN;
-    }
-  }
-  return result;
-}
-
-/**
- * Connect monzos that are pre-processed to ignore equaves.
- * @param monzos Array of arrays of prime exponents of musical intervals (usually without prime 2).
- * @param maxDistance Maximum taxicab distance to connect.
- * @returns An array of connections and an array of auxillary nodes.
- */
-function connect(monzos: number[][], maxDistance: number) {
-  if (maxDistance > 2) {
-    throw new Error('Only up to max distance = 2 implemented.');
-  }
-
-  const connections: Connection[] = [];
-  const connectingMonzos: number[][] = [];
-
-  if (maxDistance > 1) {
-    for (let i = 0; i < monzos.length; ++i) {
-      for (let j = i + 1; j < monzos.length; ++j) {
-        const distance = taxicabDistance(monzos[i], monzos[j]);
-        if (distance > 1 && distance <= maxDistance) {
-          const len = Math.max(monzos[i].length, monzos[j].length);
-          gapSearch: for (let k = 0; k < len; ++k) {
-            const gap = (monzos[i][k] ?? 0) - (monzos[j][k] ?? 0);
-            if (Math.abs(gap) === 2) {
-              const monzo = [...monzos[j]];
-              for (let l = monzos[j].length; l < monzos[i].length; ++l) {
-                monzo[l] = 0;
-              }
-              monzo[k] += gap / 2;
-              for (const existing of monzos.concat(connectingMonzos)) {
-                if (monzosEqual(monzo, existing)) {
-                  break gapSearch;
-                }
-              }
-              connectingMonzos.push(monzo);
-              break;
-            } else if (Math.abs(gap) === 1) {
-              for (let l = k + 1; l < len; ++l) {
-                const otherGap = (monzos[i][l] ?? 0) - (monzos[j][l] ?? 0);
-                const monzo = [...monzos[j]];
-                for (let m = monzos[j].length; m < monzos[i].length; ++m) {
-                  monzo[m] = 0;
-                }
-                const otherWay = [...monzo];
-                monzo[k] += gap;
-                otherWay[l] += otherGap;
-                let monzoUnique = true;
-                let otherUnique = true;
-                for (const existing of monzos.concat(connectingMonzos)) {
-                  if (monzosEqual(monzo, existing)) {
-                    monzoUnique = false;
-                  }
-                  if (monzosEqual(otherWay, existing)) {
-                    otherUnique = false;
-                  }
-                }
-                if (monzoUnique) {
-                  connectingMonzos.push(monzo);
-                }
-                if (otherUnique) {
-                  connectingMonzos.push(otherWay);
-                }
-                break gapSearch;
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-  if (maxDistance >= 1) {
-    const primaryLength = monzos.length;
-    monzos = monzos.concat(connectingMonzos);
-    for (let i = 0; i < monzos.length; ++i) {
-      for (let j = i + 1; j < monzos.length; ++j) {
-        const distance = taxicabDistance(monzos[i], monzos[j]);
-        if (distance === 1) {
-          connections.push({
-            index1: i,
-            index2: j,
-            type:
-              i < primaryLength && j < primaryLength ? 'primary' : 'auxiliary',
-          });
-        }
-      }
-    }
-  }
-  return {
-    connections,
-    connectingMonzos,
-  };
-}
-
-function project(monzos: number[][], options: LatticeOptions) {
-  const {horizontalCoordinates, verticalCoordinates} = options;
-  const projected = monzos.map(m => [...m]);
-  const limit = Math.max(
-    horizontalCoordinates.length,
-    verticalCoordinates.length
-  );
-  for (const m of projected) {
-    m.length = Math.min(limit, m.length);
-  }
-  for (let i = limit - 1; i >= 0; --i) {
-    if (horizontalCoordinates[i] || verticalCoordinates[i]) {
-      continue;
-    }
-    for (const m of projected) {
-      m.splice(i, 1);
-    }
-  }
-  return projected;
-}
-
-function unproject(monzos: number[][], options: LatticeOptions) {
-  if (!monzos.length) {
-    return [];
-  }
-  const unprojected = monzos.map(m => [...m]);
-  const {horizontalCoordinates, verticalCoordinates} = options;
-  const limit = Math.max(
-    horizontalCoordinates.length,
-    verticalCoordinates.length
-  );
-  for (let i = 0; i < limit; ++i) {
-    if (horizontalCoordinates[i] || verticalCoordinates[i]) {
-      continue;
-    }
-    for (const u of unprojected) {
-      u.splice(i, 0, 0);
-    }
-  }
-  return unprojected;
-}
-
-/**
  * Compute vertices and edges for a 2D graph representing the lattice of a musical scale in just intonation.
  * @param monzos Prime exponents of the musical intervals in the scale.
  * @param options Options for connecting vertices in the graph.
@@ -386,11 +196,13 @@ export function spanLattice(monzos: number[][], options: LatticeOptions) {
   const {horizontalCoordinates, verticalCoordinates} = options;
   const maxDistance = options.maxDistance ?? 1;
 
-  let projected = project(monzos, options);
+  const coordss = [horizontalCoordinates, verticalCoordinates];
+
+  let projected = project(monzos, coordss);
 
   const {connections, connectingMonzos} = connect(projected, maxDistance);
 
-  const unprojected = unproject(connectingMonzos, options);
+  const unprojected = unproject(connectingMonzos, coordss);
 
   const vertices: Vertex[] = [];
   let edges: Edge[] = [];
@@ -424,7 +236,7 @@ export function spanLattice(monzos: number[][], options: LatticeOptions) {
 
   if (options.edgeMonzos) {
     projected = projected.concat(connectingMonzos);
-    let ems = project(options.edgeMonzos, options);
+    let ems = project(options.edgeMonzos, coordss);
     ems = ems.concat(ems.map(em => em.map(e => -e)));
     for (let i = 0; i < projected.length; ++i) {
       for (let j = i + 1; j < projected.length; ++j) {

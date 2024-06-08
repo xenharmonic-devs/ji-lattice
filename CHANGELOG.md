@@ -1,5 +1,8 @@
 # Change log
 
+## 0.1.0
+ * Feature: 3-dimensional prime lattices.
+
 ## 0.0.3
  * Bug fix: Connect nodes that are one unit apart within epsilon tolerance. [#12](https://github.com/xenharmonic-devs/ji-lattice/issues/12)
  * Bug fix: Don't create "diagonal" edges even if the nodes are one unit apart. [#13](https://github.com/xenharmonic-devs/ji-lattice/issues/13)
