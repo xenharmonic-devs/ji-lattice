@@ -1,6 +1,6 @@
 {
   "name": "ji-lattice",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "Algorithms for projecting just intonation and equally tempered scales onto the screen.",
   "funding": {
     "type": "github",
