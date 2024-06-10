@@ -1,5 +1,9 @@
 # Change log
 
+## 0.2.0
+ * Tweak: The coordinate for prime 13 in 3D `WGP()` is a little longer. [#18](https://github.com/xenharmonic-devs/ji-lattice/issues/18)
+ * Redesign: Presets like `scottDakota24()` now work with default order of prime numbers. [#19](https://github.com/xenharmonic-devs/ji-lattice/issues/19)
+
 ## 0.1.0
  * Feature: 3-dimensional prime lattices.
 

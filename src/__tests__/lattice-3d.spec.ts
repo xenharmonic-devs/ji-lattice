@@ -39,6 +39,12 @@ describe('Wilson-Grady-Pakkanen lattice', () => {
       {x1: 80, y1: 0, z1: 0, x2: 80, y2: 0, z2: 40, type: 'primary'}, // 9 -> 63
     ]);
   });
+
+  it('has a short but not too short vector associated with prime 13', () => {
+    const thirteen = toMonzo(13);
+    const {vertices} = spanLattice3D([thirteen], WGP9());
+    expect(vertices).toEqual([{index: 0, x: -8, y: -4, z: 7}]);
+  });
 });
 
 describe('Prime sphere coordinates', () => {

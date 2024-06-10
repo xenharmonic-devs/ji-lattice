@@ -64,7 +64,7 @@ const WGP_X = [23, 40, 0, 0, -14, -8, -5, 0, 20];
 // Y-coordinates for every prime up to 23.
 const WGP_Y = [-45, 0, -40, 0, -18, -4, -32, -25, -3];
 // Z-coordinates for every prime up to 23.
-const WGP_Z = [19, 0, 0, 40, 13, 2, 5, 9, 15];
+const WGP_Z = [19, 0, 0, 40, 13, 7, 5, 9, 15];
 
 /**
  * Combine edges that share an endpoint and slope into longer ones.
