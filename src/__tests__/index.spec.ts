@@ -15,7 +15,7 @@ import {
 describe('Modulo val calculator', () => {
   it('works for 24', () => {
     const logs = LOG_PRIMES.slice(0, 24);
-    const mv = modVal(logs, 24);
+    const mv = modVal(0, logs, 24);
     expect(mv).toEqual([
       0, 14, 8, 19, 11, 17, 2, 6, 13, 21, 23, 5, 9, 10, 12, 16, 20, 22, 1, 4, 3,
       7, 15, 18,
@@ -30,7 +30,7 @@ describe('Modulo val calculator', () => {
 
   it('works for 72', () => {
     const logs = LOG_PRIMES.slice(0, 72);
-    const mv = modVal(logs, 72);
+    const mv = modVal(0, logs, 72);
     expect(mv).toEqual([
       0, 42, 23, 58, 33, 50, 6, 18, 38, 62, 69, 15, 26, 31, 40, 52, 64, 67, 5,
       11, 14, 22, 27, 34, 43, 47, 49, 53, 55, 59, 71, 2, 7, 9, 16, 17, 21, 25,
@@ -210,6 +210,20 @@ describe("Scott Dakota's PR24 lattice", () => {
     ]);
     expect(edges).toHaveLength(0);
   });
+
+  it('works with tritave-equivalence', () => {
+    const options = scottDakota24(1);
+    expect(options).toEqual({
+      horizontalCoordinates: [
+        29, 0, 33, 12, 8, 26, 31, 26, 8, 3, 5, 22, 29, 31, 34, 22, 17, 5, 3, 1,
+        1, 12, 17, 33,
+      ],
+      verticalCoordinates: [
+        12, -0, -5, 16, -14, -14, 9, 14, 14, -9, -12, -16, -12, -9, -0, 16, 17,
+        12, 9, 5, -5, -16, -17, 5,
+      ],
+    });
+  });
 });
 
 describe('Prime ring 72 coordinates', () => {
@@ -264,7 +278,7 @@ describe('Prime ring 72 coordinates', () => {
 
 describe('Coordinate aligner', () => {
   it('aligns PR72 horizontally by rotating', () => {
-    const options = primeRing72(undefined, false);
+    const options = primeRing72(0, undefined, false);
     const lengths: number[] = [];
     for (let i = 0; i < options.horizontalCoordinates.length; ++i) {
       lengths.push(
@@ -290,7 +304,7 @@ describe('Coordinate aligner', () => {
   });
 
   it('aligns PR72 with a Tonnetz lattice by shearing', () => {
-    const options = primeRing72(undefined, false);
+    const options = primeRing72(0, undefined, false);
     const lengths: number[] = [];
     for (let i = 0; i < options.horizontalCoordinates.length; ++i) {
       lengths.push(

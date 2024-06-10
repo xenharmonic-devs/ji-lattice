@@ -1,4 +1,4 @@
-import {dot, monzosEqual, sub} from 'xen-dev-utils';
+import {LOG_PRIMES, dot, monzosEqual, sub} from 'xen-dev-utils';
 import {EdgeType} from './types';
 import {connect, project, unproject} from './utils';
 
@@ -236,16 +236,22 @@ export function WGP9(equaveIndex = 0): LatticeOptions3D {
 
 /**
  * Compute coordinates based on sizes of primes that lie on the surface of a sphere offset on the x-axis.
- * @param logs Logarithms of (formal) primes with the prime of equivalence first.
+ * @param equaveIndex Index of the prime to use as the interval of equivalence.
+ * @param logs Logarithms of (formal) primes with the prime of equivalence first. Defaults to the first 24 actual primes.
  * @param searchResolution Search resolution for optimizing orthogonality of the resulting set.
  * @returns An array of horizontal coordinates for each prime and the same for vertical and depthwise coordinates.
  */
-export function primeSphere(logs: number[], searchResolution = 1024) {
+export function primeSphere(
+  equaveIndex = 0,
+  logs?: number[],
+  searchResolution = 1024
+) {
+  logs ??= LOG_PRIMES.slice(0, 24);
   const dp = (2 * Math.PI) / searchResolution;
   const horizontalCoordinates: number[] = [];
   const verticalCoordinates: number[] = [];
   const depthwiseCoordinates: number[] = [];
-  const dt = (2 * Math.PI) / logs[0];
+  const dt = (2 * Math.PI) / logs[equaveIndex];
   for (const log of logs) {
     const theta = log * dt;
     const x = 1 - Math.cos(theta);

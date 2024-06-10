@@ -280,12 +280,14 @@ function allUnique(vector: number[]) {
 
 /**
  * Calculate rounded logarithms modulo divisions. All forced to be unique.
+ * @param equaveIndex Index of the prime of equivalence.
  * @param logs Logarithms of primes.
  * @param divisions Number of divisions of the first prime.
  * @param searchResolution Resolution for GPV search. Set to 0 to disable (default).
  * @returns Array of steps for each prime modulo the number of divisions.
  */
 export function modVal(
+  equaveIndex: number,
   logs: number[],
   divisions: number,
   searchResolution = 0
@@ -296,13 +298,13 @@ export function modVal(
   // Try to find a GPV.
   for (let i = 0; i < searchResolution; ++i) {
     const offset = (0.5 * i) / searchResolution;
-    const normalizer = (divisions + offset) / logs[0];
+    const normalizer = (divisions + offset) / logs[equaveIndex];
     const modval = logs.map(l => mmod(Math.round(l * normalizer), divisions));
     if (allUnique(modval)) {
       return modval;
     }
     if (i) {
-      const normalizer = (divisions - offset) / logs[0];
+      const normalizer = (divisions - offset) / logs[equaveIndex];
       const modval = logs.map(l => mmod(Math.round(l * normalizer), divisions));
       if (allUnique(modval)) {
         return modval;
@@ -310,7 +312,7 @@ export function modVal(
     }
   }
   // No GPV with unique entries found. Use force.
-  const normalizer = divisions / logs[0];
+  const normalizer = divisions / logs[equaveIndex];
   const val = logs.map(l => Math.round(l * normalizer), divisions);
   for (let i = 1; i < val.length; ++i) {
     const reserved = new Set<number>();
@@ -353,12 +355,16 @@ export function kraigGrady9(equaveIndex = 0): LatticeOptions {
 
 /**
  * Compute prime ring 24 coordinates based on Scott Dakota's conventions.
+ * @param equaveIndex Index of the prime to use as the interval of equivalence.
  * @param logs Logarithms of (formal) primes with the prime of equivalence first. Defaults to the actual primes.
  * @returns An array of horizontal coordinates for each prime and the same for vertical coordinates.
  */
-export function scottDakota24(logs?: number[]): LatticeOptions {
+export function scottDakota24(
+  equaveIndex = 0,
+  logs?: number[]
+): LatticeOptions {
   logs ??= LOG_PRIMES.slice(0, 24);
-  const mv = modVal(logs, 24);
+  const mv = modVal(equaveIndex, logs, 24);
   const horizontalCoordinates: number[] = [];
   const verticalCoordinates: number[] = [];
   for (const steps of mv) {
@@ -373,13 +379,18 @@ export function scottDakota24(logs?: number[]): LatticeOptions {
 
 /**
  * Compute prime ring 72 coordinates.
+ * @param equaveIndex Index of the prime to use as the interval of equivalence.
  * @param logs Logarithms of (formal) primes with the prime of equivalence first. Defaults to the actual primes.
  * @param round Round coordinates to nearest integers.
  * @returns An array of horizontal coordinates for each prime and the same for vertical coordinates.
  */
-export function primeRing72(logs?: number[], round = true): LatticeOptions {
+export function primeRing72(
+  equaveIndex = 0,
+  logs?: number[],
+  round = true
+): LatticeOptions {
   logs ??= LOG_PRIMES.slice(0, 72);
-  const mv = modVal(logs, 72);
+  const mv = modVal(equaveIndex, logs, 72);
   const horizontalCoordinates: number[] = [];
   const verticalCoordinates: number[] = [];
   for (const steps of mv) {
@@ -410,23 +421,24 @@ export function align(
   tonnetzIndex?: number
 ) {
   const {horizontalCoordinates, verticalCoordinates} = options;
+  const l = Math.max(horizontalCoordinates.length, verticalCoordinates.length);
 
   if (tonnetzIndex === undefined) {
-    const x = horizontalCoordinates[horizontalIndex];
-    const y = verticalCoordinates[horizontalIndex];
+    const x = horizontalCoordinates[horizontalIndex] ?? 0;
+    const y = verticalCoordinates[horizontalIndex] ?? 0;
     const c = 1 / Math.sqrt(1 + (y * y) / (x * x));
     const s = (y / x) * c;
-    for (let i = 0; i < horizontalCoordinates.length; ++i) {
-      const u = horizontalCoordinates[i];
-      const v = verticalCoordinates[i];
+    for (let i = 0; i < l; ++i) {
+      const u = horizontalCoordinates[i] ?? 0;
+      const v = verticalCoordinates[i] ?? 0;
       horizontalCoordinates[i] = u * c + v * s;
       verticalCoordinates[i] = v * c - u * s;
     }
   } else {
-    const x1 = horizontalCoordinates[horizontalIndex];
-    const y1 = verticalCoordinates[horizontalIndex];
-    const x2 = horizontalCoordinates[tonnetzIndex];
-    const y2 = verticalCoordinates[tonnetzIndex];
+    const x1 = horizontalCoordinates[horizontalIndex] ?? 0;
+    const y1 = verticalCoordinates[horizontalIndex] ?? 0;
+    const x2 = horizontalCoordinates[tonnetzIndex] ?? 0;
+    const y2 = verticalCoordinates[tonnetzIndex] ?? 0;
 
     const r1 = Math.hypot(x1, y1);
     const R2 = x2 * x2 + y2 * y2;
@@ -446,9 +458,9 @@ export function align(
     const a10 = (-r1 * x2 + u2 * x1) / (x1 * y2 - x2 * y1);
     const a11 = (v2 * x1) / (x1 * y2 - x2 * y1);
 
-    for (let i = 0; i < horizontalCoordinates.length; ++i) {
-      const u = horizontalCoordinates[i];
-      const v = verticalCoordinates[i];
+    for (let i = 0; i < l; ++i) {
+      const u = horizontalCoordinates[i] ?? 0;
+      const v = verticalCoordinates[i] ?? 0;
       horizontalCoordinates[i] = a00 * u + a10 * v;
       verticalCoordinates[i] = a01 * u + a11 * v;
     }

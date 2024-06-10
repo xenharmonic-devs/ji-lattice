@@ -44,7 +44,7 @@ describe('Wilson-Grady-Pakkanen lattice', () => {
 describe('Prime sphere coordinates', () => {
   it('produces coordinates for the 11-limit', () => {
     const {horizontalCoordinates, verticalCoordinates, depthwiseCoordinates} =
-      primeSphere(LOG_PRIMES.slice(0, 5));
+      primeSphere(0, LOG_PRIMES.slice(0, 5));
     const coords: string[] = [];
     for (let i = 0; i < 5; ++i) {
       coords.push(
@@ -59,6 +59,26 @@ describe('Prime sphere coordinates', () => {
       '1.437, -0.900, -0.000', // 5/4 points right-up
       '0.647, 0.211, 0.912', // 7/4 points into the screen
       '1.968, 0.086, -0.237', // 11/8 does whatever
+    ]);
+  });
+
+  it('produces tritave-equivalent coordinates for the 11-limit', () => {
+    const {horizontalCoordinates, verticalCoordinates, depthwiseCoordinates} =
+      primeSphere(1, LOG_PRIMES.slice(0, 5));
+    const coords: string[] = [];
+    for (let i = 0; i < 5; ++i) {
+      coords.push(
+        `${horizontalCoordinates[i].toFixed(3)}, ${verticalCoordinates[
+          i
+        ].toFixed(3)}, ${depthwiseCoordinates[i].toFixed(3)}`
+      );
+    }
+    expect(coords).toEqual([
+      '1.680, 0.733, 0.000',
+      '0.000, 0.000, 0.000',
+      '1.976, -0.218, -0.000',
+      '0.867, -0.991, 0.000',
+      '0.589, 0.022, -0.912',
     ]);
   });
 });
