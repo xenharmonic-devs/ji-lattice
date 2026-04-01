@@ -78,7 +78,7 @@ export function mergeEdges3D(edges: Edge3D[]) {
     if (
       edge.x2 < edge.x1 ||
       (edge.x2 === edge.x1 && edge.y2 < edge.y1) ||
-      (edge.y2 === edge.y1 && edge.z2 < edge.z1)
+      (edge.x2 === edge.x1 && edge.y2 === edge.y1 && edge.z2 < edge.z1)
     ) {
       oriented.push({
         x1: edge.x2,
@@ -107,11 +107,11 @@ export function mergeEdges3D(edges: Edge3D[]) {
     const dz = z2 - z1;
     for (let j = i + 1; j < oriented.length; ++j) {
       const e = oriented[j];
-      if (e.x1 === x2 && e.y1 === y2 && e.z1 === e.z2 && e.type === type) {
+      if (e.x1 === x2 && e.y1 === y2 && e.z1 === z2 && e.type === type) {
         const dex = e.x2 - e.x1;
         const dey = e.y2 - e.y1;
         const dez = e.z2 - e.z1;
-        if (dex * dy === dx * dey && dex * dz === dz * dez) {
+        if (dex * dy === dx * dey && dex * dz === dx * dez) {
           x2 = e.x2;
           y2 = e.y2;
           z2 = e.z2;

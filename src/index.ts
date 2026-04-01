@@ -426,8 +426,12 @@ export function align(
   if (tonnetzIndex === undefined) {
     const x = horizontalCoordinates[horizontalIndex] ?? 0;
     const y = verticalCoordinates[horizontalIndex] ?? 0;
-    const c = 1 / Math.sqrt(1 + (y * y) / (x * x));
-    const s = (y / x) * c;
+    const r = Math.hypot(x, y);
+    if (!r) {
+      throw new Error('Cannot align a zero-length coordinate vector.');
+    }
+    const c = x / r;
+    const s = y / r;
     for (let i = 0; i < l; ++i) {
       const u = horizontalCoordinates[i] ?? 0;
       const v = verticalCoordinates[i] ?? 0;

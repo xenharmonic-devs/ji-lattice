@@ -303,6 +303,16 @@ describe('Coordinate aligner', () => {
     }
   });
 
+  it('aligns when the chosen coordinate is vertical', () => {
+    const options = {
+      horizontalCoordinates: [0, 0, 1],
+      verticalCoordinates: [0, 2, 0],
+    };
+    align(options, 1);
+    expect(options.horizontalCoordinates[1]).toBeCloseTo(2);
+    expect(options.verticalCoordinates[1]).toBeCloseTo(0);
+  });
+
   it('aligns PR72 with a Tonnetz lattice by shearing', () => {
     const options = primeRing72(0, undefined, false);
     const lengths: number[] = [];

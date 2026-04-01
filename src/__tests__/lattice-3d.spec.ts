@@ -1,6 +1,6 @@
 import {describe, it, expect} from 'vitest';
 import {Fraction, LOG_PRIMES, toMonzo} from 'xen-dev-utils';
-import {WGP9, primeSphere, spanLattice3D} from '../lattice-3d';
+import {WGP9, mergeEdges3D, primeSphere, spanLattice3D} from '../lattice-3d';
 
 describe('Wilson-Grady-Pakkanen lattice', () => {
   it('works for a 7-limit box', () => {
@@ -44,6 +44,38 @@ describe('Wilson-Grady-Pakkanen lattice', () => {
     const thirteen = toMonzo(13);
     const {vertices} = spanLattice3D([thirteen], WGP9());
     expect(vertices).toEqual([{index: 0, x: -8, y: -4, z: 7}]);
+  });
+});
+
+describe('3D edge merger', () => {
+  it('merges collinear connected edges when z changes', () => {
+    const edges = [
+      {x1: 0, y1: 0, z1: 0, x2: 1, y2: 1, z2: 1, type: 'primary' as const},
+      {x1: 1, y1: 1, z1: 1, x2: 2, y2: 2, z2: 2, type: 'primary' as const},
+    ];
+    expect(mergeEdges3D(edges)).toEqual([
+      {x1: 0, y1: 0, z1: 0, x2: 2, y2: 2, z2: 2, type: 'primary'},
+    ]);
+  });
+
+  it('keeps orientation when x increases even if z decreases', () => {
+    const edges = [
+      {x1: 0, y1: 0, z1: 1, x2: 1, y2: 0, z2: 0, type: 'primary' as const},
+    ];
+    expect(mergeEdges3D(edges)).toEqual([
+      {x1: 0, y1: 0, z1: 1, x2: 1, y2: 0, z2: 0, type: 'primary'},
+    ]);
+  });
+
+  it('does not merge edges with mismatched z slope', () => {
+    const edges = [
+      {x1: 0, y1: 0, z1: 0, x2: 2, y2: 2, z2: 1, type: 'primary' as const},
+      {x1: 2, y1: 2, z1: 1, x2: 3, y2: 3, z2: 2, type: 'primary' as const},
+    ];
+    expect(mergeEdges3D(edges)).toEqual([
+      {x1: 0, y1: 0, z1: 0, x2: 2, y2: 2, z2: 1, type: 'primary'},
+      {x1: 2, y1: 2, z1: 1, x2: 3, y2: 3, z2: 2, type: 'primary'},
+    ]);
   });
 });
 
