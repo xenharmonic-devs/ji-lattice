@@ -1,5 +1,19 @@
 # Change log
 
+## 0.3.1
+ * Bug fix: Resolve runtime import errors by marking type-only imports and exports correctly.
+
+## 0.3.0
+ * Bug fix: Fix 3D edge merging and alignment of vertical vectors.
+ * Enhancement: Add an exports map and adjust package entry points for improved module compatibility.
+ * Documentation: Refresh README and TypeDoc comments.
+
+## 0.2.2
+ * Maintenance: Update project dependencies.
+
+## 0.2.1
+ * Maintenance: Update project dependencies.
+
 ## 0.2.0
  * Tweak: The coordinate for prime 13 in 3D `WGP()` is a little longer. [#18](https://github.com/xenharmonic-devs/ji-lattice/issues/18)
  * Redesign: Presets like `scottDakota24()` now work with default order of prime numbers. [#19](https://github.com/xenharmonic-devs/ji-lattice/issues/19)
