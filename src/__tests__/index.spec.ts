@@ -10,7 +10,7 @@ import {
   shortestEdge,
   spanGrid,
   spanLattice,
-} from '..';
+} from '../index.js';
 
 describe('Modulo val calculator', () => {
   it('works for 24', () => {

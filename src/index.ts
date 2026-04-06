@@ -1,8 +1,8 @@
 import {LOG_PRIMES, dot, mmod, monzosEqual, sub} from 'xen-dev-utils';
-import type {EdgeType} from './types';
-import {connect, project, unproject} from './utils';
-export type * from './types';
-export * from './lattice-3d';
+import type {EdgeType} from './types.js';
+import {connect, project, unproject} from './utils.js';
+export type * from './types.js';
+export * from './lattice-3d.js';
 
 /**
  * A vertex of a 2D graph.

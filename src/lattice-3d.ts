@@ -1,6 +1,6 @@
 import {LOG_PRIMES, dot, monzosEqual, sub} from 'xen-dev-utils';
-import {EdgeType} from './types';
-import {connect, project, unproject} from './utils';
+import {EdgeType} from './types.js';
+import {connect, project, unproject} from './utils.js';
 
 const EPSILON = 1e-6;
 

@@ -1,5 +1,5 @@
 import {monzosEqual} from 'xen-dev-utils';
-import {type EdgeType} from './types';
+import {type EdgeType} from './types.js';
 
 // Small radius of tolerance to accept near unit distances between fractional coordinates as edges.
 const EPSILON = 1e-6;

@@ -5,7 +5,8 @@
       "es2020"
     ],
     "target": "es2020",
-    "moduleResolution": "node",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
     "types": [
       "node"
     ],

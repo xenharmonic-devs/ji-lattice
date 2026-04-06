@@ -1,6 +1,6 @@
 import {describe, it, expect} from 'vitest';
 import {Fraction, LOG_PRIMES, toMonzo} from 'xen-dev-utils';
-import {WGP9, mergeEdges3D, primeSphere, spanLattice3D} from '../lattice-3d';
+import {WGP9, mergeEdges3D, primeSphere, spanLattice3D} from '../lattice-3d.js';
 
 describe('Wilson-Grady-Pakkanen lattice', () => {
   it('works for a 7-limit box', () => {
