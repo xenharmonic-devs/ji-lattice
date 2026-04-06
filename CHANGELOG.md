@@ -1,5 +1,9 @@
 # Change log
 
+## 0.3.2
+ * Maintenance: Update project dependencies.
+ * Maintenance: Switch TypeScript to nodenext and enable ESM package mode.
+
 ## 0.3.1
  * Bug fix: Resolve runtime import errors by marking type-only imports and exports correctly.
 
